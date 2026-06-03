@@ -4,6 +4,7 @@ import type {
   AttachmentInfo,
   BasicInfo,
   TestCase,
+  TestReportDraft,
   TestResult,
 } from "./types/report";
 import { fetchTestCases } from "./features/testCase/testCase.service";
@@ -11,6 +12,8 @@ import { BasicInfoForm } from "./components/BasicInfoForm";
 import { PreTestChecklist } from "./components/PreTestChecklist";
 import { TestCaseList } from "./components/TestCaseList";
 import { AttachmentForm } from "./components/AttachmentForm";
+import { ReportPreview } from "./components/ReportPreview";
+import { ReportActions } from "./components/ReportActions";
 
 function createEmptyBasicInfo(): BasicInfo {
   return {
@@ -63,6 +66,12 @@ function App() {
     setResults((prev) => ({ ...prev, [caseId]: result }));
   };
 
+  const handleLoadDraft = (draft: TestReportDraft) => {
+    if (draft.basicInfo) setBasicInfo(draft.basicInfo);
+    setResults(draft.results ?? {});
+    setAttachmentInfo(draft.attachmentInfo ?? {});
+  };
+
   return (
     <div className="app">
       <header className="app-header">
@@ -88,6 +97,19 @@ function App() {
             onResultChange={handleResultChange}
           />
           <AttachmentForm value={attachmentInfo} onChange={setAttachmentInfo} />
+          <ReportPreview
+            basicInfo={basicInfo}
+            testCases={testCases}
+            results={results}
+            attachmentInfo={attachmentInfo}
+          />
+          <ReportActions
+            basicInfo={basicInfo}
+            results={results}
+            attachmentInfo={attachmentInfo}
+            testCases={testCases}
+            onLoadDraft={handleLoadDraft}
+          />
         </main>
       )}
     </div>

@@ -300,6 +300,131 @@ input[type="file"] {
   border-color: var(--danger);
 }
 
+/* Report preview */
+.preview-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 24px;
+  margin-bottom: 14px;
+}
+
+.info-row {
+  display: flex;
+  gap: 8px;
+}
+
+.info-label {
+  font-weight: 600;
+  color: var(--text-muted);
+  min-width: 84px;
+}
+
+.preview-count {
+  margin: 0 0 12px;
+  font-size: 14px;
+}
+
+.stat-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.stat-chip {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  background: #fff;
+  color: var(--text-muted);
+}
+
+.stat-pass {
+  color: #047857;
+  border-color: #6ee7b7;
+  background: #ecfdf5;
+}
+.stat-fail {
+  color: #b91c1c;
+  border-color: #fca5a5;
+  background: #fef2f2;
+}
+.stat-blocked {
+  color: #b45309;
+  border-color: #fcd34d;
+  background: #fffbeb;
+}
+.stat-need_confirm {
+  color: #6d28d9;
+  border-color: #c4b5fd;
+  background: #f5f3ff;
+}
+
+.preview-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* Action buttons */
+.button-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.btn {
+  padding: 9px 16px;
+  font-size: 14px;
+  font-family: inherit;
+  font-weight: 600;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: #fff;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.btn:hover {
+  border-color: var(--accent);
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.btn-primary:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.btn-secondary {
+  background: #fff;
+  color: var(--text);
+}
+
+.btn-danger {
+  color: var(--danger);
+  border-color: #fca5a5;
+  background: #fff;
+}
+.btn-danger:hover {
+  background: #fef2f2;
+  border-color: var(--danger);
+}
+
+.action-status {
+  margin: 12px 0 0;
+  font-size: 14px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
 /* Mobile */
 @media (max-width: 768px) {
   .app {
@@ -308,7 +433,16 @@ input[type="file"] {
 
   .field-grid,
   .checklist,
-  .screenshot-grid {
+  .screenshot-grid,
+  .preview-summary {
     grid-template-columns: 1fr;
+  }
+
+  .button-bar {
+    flex-direction: column;
+  }
+
+  .button-bar .btn {
+    width: 100%;
   }
 }

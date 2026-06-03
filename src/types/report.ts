@@ -53,3 +53,12 @@ export interface TestReportDraft {
   results: Record<string, TestResult>;
   attachmentInfo: AttachmentInfo;
 }
+
+export interface TestReport {
+  title: string;
+  basicInfo: BasicInfo;
+  testCases: TestCase[];
+  results: Record<string, TestResult>;
+  attachmentInfo: AttachmentInfo;
+  generatedAt: string;
+}
