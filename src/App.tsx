@@ -17,6 +17,8 @@ import { ReportPreview } from "./components/ReportPreview";
 import { ReportActions } from "./components/ReportActions";
 import { InstructionCard } from "./components/InstructionCard";
 import { TestCaseMetaCard } from "./components/TestCaseMetaCard";
+import { TestVersionDownloadSection } from "./components/TestVersionDownloadSection";
+import { APP_TITLE } from "./config/appConfig";
 
 function createEmptyBasicInfo(): BasicInfo {
   return {
@@ -80,7 +82,7 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>Ramen 测试报告工具</h1>
+        <h1>{APP_TITLE}</h1>
         <p className="app-subtitle">填写测试结果并上传截图</p>
       </header>
 
@@ -104,6 +106,7 @@ function App() {
           {meta && <TestCaseMetaCard meta={meta} />}
           <BasicInfoForm value={basicInfo} onChange={setBasicInfo} />
           <PreTestChecklist />
+          <TestVersionDownloadSection />
           <TestCaseList
             testCases={testCases}
             results={results}

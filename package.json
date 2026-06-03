@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-tooltip": "^1.2.8",
     "dayjs": "^1.11.21",
     "papaparse": "^5.5.3",
     "react": "^19.2.6",

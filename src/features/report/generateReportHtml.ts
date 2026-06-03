@@ -42,21 +42,25 @@ function isHttpUrl(value: string): boolean {
   return value.startsWith("http://") || value.startsWith("https://");
 }
 
+/** Wrap a preview image with a hover mask that says 点击预览. */
+function imageThumb(src: string, alt: string): string {
+  return `<span class="shot"><img class="screenshot-preview" src="${escapeHtml(
+    src,
+  )}" alt="${escapeHtml(
+    alt,
+  )}" /><span class="shot-hint">点击预览</span></span>`;
+}
+
 function renderImage(src: string | undefined, alt: string): string {
   if (!isImageDataUrl(src)) return `<span class="empty">${PLACEHOLDER}</span>`;
-  return `<img class="screenshot-preview" src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" />`;
+  return imageThumb(src, alt);
 }
 
 function renderImageList(srcs: string[], altPrefix: string): string {
   const valid = srcs.filter(isImageDataUrl);
   if (valid.length === 0) return `<span class="empty">${PLACEHOLDER}</span>`;
   return `<div class="screenshot-grid">${valid
-    .map(
-      (src, i) =>
-        `<img class="screenshot-preview" src="${escapeHtml(src)}" alt="${escapeHtml(
-          `${altPrefix} ${i + 1}`,
-        )}" />`,
-    )
+    .map((src, i) => imageThumb(src, `${altPrefix} ${i + 1}`))
     .join("")}</div>`;
 }
 
@@ -64,6 +68,17 @@ function renderImageList(srcs: string[], altPrefix: string): string {
 function renderLink(value: string | undefined): string {
   const trimmed = (value ?? "").trim();
   if (!trimmed) return PLACEHOLDER;
+  if (isHttpUrl(trimmed)) {
+    const safe = escapeHtml(trimmed);
+    return `<a href="${safe}" target="_blank" rel="noopener noreferrer">${safe}</a>`;
+  }
+  return escapeHtml(trimmed);
+}
+
+/** Render a version download link: http(s) → link, empty → 未设置, else plain text. */
+function renderVersionLink(value: string | undefined): string {
+  const trimmed = (value ?? "").trim();
+  if (!trimmed) return "未设置";
   if (isHttpUrl(trimmed)) {
     const safe = escapeHtml(trimmed);
     return `<a href="${safe}" target="_blank" rel="noopener noreferrer">${safe}</a>`;
@@ -115,13 +130,67 @@ const STYLE = `
   .info-value a { color: #2563eb; }
   .empty { color: #9ca3af; }
   img { max-width: 100%; }
+  .shot {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+    line-height: 0;
+  }
   .screenshot-preview {
+    display: block;
     max-width: 220px;
     max-height: 220px;
     object-fit: contain;
     border: 1px solid #cbd1da;
     border-radius: 6px;
     background: #fff;
+  }
+  .shot-hint {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    line-height: 1.4;
+    color: #fff;
+    background: rgba(75, 85, 99, 0.55);
+    border-radius: 6px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    pointer-events: none;
+  }
+  .shot:hover .shot-hint { opacity: 1; }
+  .img-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.75);
+  }
+  .img-modal.open { display: flex; }
+  .img-modal img {
+    max-width: 92vw;
+    max-height: 88vh;
+    object-fit: contain;
+    border-radius: 6px;
+    background: #fff;
+    cursor: zoom-out;
+  }
+  .img-modal-close {
+    position: fixed;
+    top: 16px;
+    right: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 8px 16px;
+    color: #1f2430;
+    background: #fff;
+    border: 1px solid #cbd1da;
+    border-radius: 8px;
+    cursor: pointer;
   }
   .screenshot-grid { display: flex; flex-wrap: wrap; gap: 10px; }
   .screenshot-row { display: flex; flex-wrap: wrap; gap: 24px; }
@@ -159,7 +228,40 @@ const STYLE = `
     body { background: #fff; padding: 0; }
     .card { box-shadow: none; border: 1px solid #d1d5db; break-inside: avoid; }
     .case { break-inside: avoid; }
+    .img-modal { display: none !important; }
   }
+`;
+
+/**
+ * Inline, self-contained lightbox script. Clicking any .screenshot-preview
+ * image opens a full-size modal; close via backdrop click, the close button,
+ * or Esc. No external dependencies — works offline.
+ */
+const LIGHTBOX_SCRIPT = `
+(function () {
+  var modal = document.getElementById('img-modal');
+  var modalImg = document.getElementById('img-modal-img');
+  if (!modal || !modalImg) return;
+  function open(src, alt) {
+    modalImg.src = src;
+    modalImg.alt = alt || '';
+    modal.classList.add('open');
+  }
+  function close() {
+    modal.classList.remove('open');
+    modalImg.removeAttribute('src');
+  }
+  document.querySelectorAll('.screenshot-preview').forEach(function (img) {
+    img.addEventListener('click', function () { open(img.src, img.alt); });
+  });
+  modal.addEventListener('click', function (e) {
+    if (e.target === modalImg) return;
+    close();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') close();
+  });
+})();
 `;
 
 /** Build the complete, self-contained HTML report document as a string. */
@@ -183,6 +285,16 @@ export function generateReportHtml(report: TestReport): string {
         ${infoRow("已填写", String(stats.filled))}
         ${infoRow("未填写", String(stats.unfilled))}
         ${infoRow("完成率", `${stats.completionRate}%`)}
+      </div>
+    </section>`;
+
+  const versionLinks = report.testVersionLinks;
+  const versionSection = `
+    <section class="card">
+      <h2 class="section-title">本次测试版本下载</h2>
+      <div class="info-grid">
+        ${infoRow("Android APK", renderVersionLink(versionLinks?.apk))}
+        ${infoRow("iOS", renderVersionLink(versionLinks?.ios))}
       </div>
     </section>`;
 
@@ -299,12 +411,18 @@ export function generateReportHtml(report: TestReport): string {
     <p class="generated-at">生成时间：${formatValue(report.generatedAt)}</p>
   </header>
   ${summarySection}
+  ${versionSection}
   ${basicSection}
   ${networkSection}
   ${envScreenshotSection}
   ${caseSection}
   ${attachmentSection}
 </div>
+<div class="img-modal" id="img-modal" role="dialog" aria-label="截图预览">
+  <button type="button" class="img-modal-close" aria-label="关闭">关闭</button>
+  <img id="img-modal-img" alt="截图预览" />
+</div>
+<script>${LIGHTBOX_SCRIPT}</script>
 </body>
 </html>`;
 }

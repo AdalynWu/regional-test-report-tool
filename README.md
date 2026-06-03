@@ -60,6 +60,34 @@ If the `类别` header row is missing, the page shows a clear error. If the file
 loads but yields zero cases, the page shows
 `未解析到任何测试案例，请确认 CSV 格式是否正确`.
 
+## Test Version Links
+
+The "本次测试版本下载" section shows the Android APK / iOS download links for the
+build under test. These are maintained by QA in:
+
+```
+src/config/testVersionLinks.ts
+```
+
+```ts
+export const TEST_VERSION_LINKS: TestVersionLinks = {
+  apk: "",   // Android APK download URL (http/https)
+  ios: "",   // iOS download URL (http/https)
+};
+```
+
+Notes:
+
+- After changing these links, you must **rebuild and redeploy** (the values are
+  baked into the build, not fetched at runtime). On GitHub Pages this happens
+  automatically on the next push to `main`.
+- Only `http://` / `https://` values render as clickable links. Empty values show
+  "尚未設定 … 下载连结"; any other string is shown as plain text.
+- Testers must **clear / uninstall the previous version** before downloading the
+  new build, so stale caches don't affect test results.
+- This tool does **not** download or install the App automatically — it only
+  surfaces the version download links for testers to use.
+
 ## GitHub Pages Deployment
 
 Deployment is automated via GitHub Actions (`.github/workflows/deploy.yml`):

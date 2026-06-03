@@ -13,8 +13,9 @@
   --radius: 10px;
   --shadow: 0 1px 3px rgba(16, 24, 40, 0.08), 0 1px 2px rgba(16, 24, 40, 0.04);
 
-  font-family: system-ui, "Segoe UI", "Microsoft JhengHei", "PingFang SC",
-    Roboto, sans-serif;
+  font-family:
+    system-ui, "Segoe UI", "Microsoft JhengHei", "PingFang SC", Roboto,
+    sans-serif;
   font-size: 15px;
   line-height: 1.55;
   color: var(--text);
@@ -152,7 +153,7 @@ input[type="file"] {
 
 .checklist-item {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 8px;
   cursor: pointer;
 }
@@ -525,6 +526,183 @@ input[type="file"] {
   font-weight: 600;
 }
 
+/* Help tooltip */
+.help-tip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-left: 6px;
+  padding: 0;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-border, #93c5fd);
+  border-radius: 50%;
+  cursor: help;
+  vertical-align: middle;
+}
+
+.help-tip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.tooltip-content {
+  max-width: 280px;
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #fff;
+  background: #1f2937;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 50;
+}
+
+.tooltip-arrow {
+  fill: #1f2937;
+}
+
+/* Enlarged environment screenshot thumbnails */
+.env-thumb {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.env-thumb-image {
+  position: relative;
+  display: block;
+  padding: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.env-thumb-image img {
+  display: block;
+  width: 220px;
+  max-width: 100%;
+  height: auto;
+  max-height: 220px;
+  object-fit: contain;
+}
+
+.env-thumb-hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.env-thumb-image:hover .env-thumb-hint,
+.env-thumb-image:focus-visible .env-thumb-hint {
+  opacity: 1;
+}
+
+.env-thumb-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* Image preview dialog */
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 100;
+}
+
+.dialog-content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90vw;
+  max-width: 900px;
+  height: 85vh;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  z-index: 101;
+}
+
+.dialog-title {
+  margin: 0;
+  font-size: 16px;
+}
+
+.dialog-iframe {
+  flex: 1;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #f9fafb;
+}
+
+.dialog-close {
+  align-self: flex-end;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  background: #fff;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.dialog-close:hover {
+  border-color: var(--accent);
+}
+
+/* Test version download section */
+.version-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 6px 0;
+}
+
+.version-label {
+  display: inline-flex;
+  align-items: center;
+  font-weight: 600;
+  color: var(--text-muted);
+  min-width: 120px;
+}
+
+.version-value {
+  flex: 1;
+  word-break: break-word;
+}
+
+.version-value a {
+  color: var(--accent);
+}
+
+.version-empty {
+  color: var(--text-muted);
+}
+
 /* Mobile */
 @media (max-width: 768px) {
   .app {
@@ -544,6 +722,21 @@ input[type="file"] {
   }
 
   .button-bar .btn {
+    width: 100%;
+  }
+
+  .version-row {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .dialog-content {
+    width: 94vw;
+    height: 88vh;
+    padding: 12px;
+  }
+
+  .env-thumb-image img {
     width: 100%;
   }
 }

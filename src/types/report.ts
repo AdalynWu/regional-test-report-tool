@@ -54,6 +54,11 @@ export interface TestCaseMeta {
   totalCases: number;
 }
 
+export interface TestVersionLinks {
+  apk: string;
+  ios: string;
+}
+
 export interface TestReportDraft {
   basicInfo: BasicInfo;
   results: Record<string, TestResult>;
@@ -68,4 +73,5 @@ export interface TestReport {
   attachmentInfo: AttachmentInfo;
   generatedAt: string;
   testCaseMeta?: TestCaseMeta;
+  testVersionLinks?: TestVersionLinks;
 }

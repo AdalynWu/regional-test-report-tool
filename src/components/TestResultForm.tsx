@@ -1,6 +1,12 @@
+import { useState } from "react";
 import type { ChangeEvent } from "react";
 import type { TestResult, TestStatus } from "../types/report";
 import { fileToBase64 } from "../utils/fileToBase64";
+import { ImagePreviewDialog } from "./ImagePreviewDialog";
+
+function isImageDataUrl(value: string | undefined): value is string {
+  return typeof value === "string" && value.startsWith("data:image/");
+}
 
 interface TestResultFormProps {
   caseId: string;
@@ -29,6 +35,11 @@ function emptyResult(caseId: string): TestResult {
 
 export function TestResultForm({ caseId, value, onChange }: TestResultFormProps) {
   const current = value ?? emptyResult(caseId);
+  const [previewSrc, setPreviewSrc] = useState<string | null>(null);
+
+  const openPreview = (src: string | undefined) => {
+    if (isImageDataUrl(src)) setPreviewSrc(src);
+  };
 
   const patch = (partial: Partial<TestResult>) => {
     onChange({ ...current, ...partial, caseId });
@@ -114,8 +125,16 @@ export function TestResultForm({ caseId, value, onChange }: TestResultFormProps)
         {current.screenshots.length > 0 && (
           <div className="thumb-row">
             {current.screenshots.map((src, index) => (
-              <div key={index} className="thumb">
-                <img src={src} alt={`截图 ${index + 1}`} />
+              <div key={index} className="env-thumb">
+                <button
+                  type="button"
+                  className="env-thumb-image"
+                  onClick={() => openPreview(src)}
+                  title="点击预览"
+                >
+                  <img src={src} alt={`截图 ${index + 1}`} />
+                  <span className="env-thumb-hint">点击预览</span>
+                </button>
                 <button
                   type="button"
                   className="thumb-remove"
@@ -128,6 +147,14 @@ export function TestResultForm({ caseId, value, onChange }: TestResultFormProps)
           </div>
         )}
       </div>
+
+      <ImagePreviewDialog
+        imageSrc={previewSrc}
+        open={previewSrc !== null}
+        onOpenChange={(open) => {
+          if (!open) setPreviewSrc(null);
+        }}
+      />
     </div>
   );
 }

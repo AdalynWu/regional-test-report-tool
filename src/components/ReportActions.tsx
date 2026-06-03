@@ -17,6 +17,8 @@ import {
 import { generateReportHtml } from "../features/report/generateReportHtml";
 import { downloadHtml } from "../features/report/downloadHtml";
 import { computeReportStats } from "../features/report/reportStats";
+import { APP_TITLE } from "../config/appConfig";
+import { TEST_VERSION_LINKS } from "../config/testVersionLinks";
 
 interface ReportActionsProps {
   basicInfo: BasicInfo;
@@ -27,16 +29,22 @@ interface ReportActionsProps {
   onLoadDraft: (draft: TestReportDraft) => void;
 }
 
-const REPORT_TITLE = "Ramen 测试报告";
+/**
+ * Make a filename safe: remove illegal characters, collapse consecutive
+ * underscores, and trim surrounding whitespace. Internal spaces are kept.
+ */
+function sanitizeFilename(name: string): string {
+  return name
+    .replace(/[\\/:*?"<>|]/g, "")
+    .replace(/_+/g, "_")
+    .trim();
+}
 
-/** Make a string safe for use in a filename. */
-function sanitizeForFilename(value: string, fallback: string): string {
-  const cleaned = (value ?? "")
-    .trim()
-    .replace(/[\\/:*?"<>|\s]+/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
-  return cleaned || fallback;
+/** Convert a test date to YYYYMMDD; fall back to today when empty. */
+function formatDateForFilename(testDate: string): string {
+  const trimmed = (testDate ?? "").trim();
+  if (!trimmed) return dayjs().format("YYYYMMDD");
+  return trimmed.replace(/-/g, "");
 }
 
 export function ReportActions({
@@ -100,19 +108,21 @@ export function ReportActions({
     }
 
     const report: TestReport = {
-      title: REPORT_TITLE,
+      title: APP_TITLE,
       basicInfo,
       testCases,
       results,
       attachmentInfo,
       generatedAt: dayjs().format("YYYY-MM-DD HH:mm"),
       testCaseMeta,
+      testVersionLinks: TEST_VERSION_LINKS,
     };
     const html = generateReportHtml(report);
-    const location = sanitizeForFilename(basicInfo.location, "unknown");
-    const device = sanitizeForFilename(basicInfo.deviceModel, "device");
-    const stamp = dayjs().format("YYYYMMDD-HHmm");
-    const filename = `ramen-test-report-${location}-${device}-${stamp}.html`;
+    const location = basicInfo.location.trim() || "未填写地区";
+    const testDate = formatDateForFilename(basicInfo.testDate);
+    const filename = `${sanitizeFilename(
+      `${APP_TITLE}_${location}_${testDate}`,
+    )}.html`;
     downloadHtml(html, filename);
     setStatus("报告已下载");
   };
