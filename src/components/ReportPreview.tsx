@@ -5,6 +5,7 @@ import type {
   TestResult,
   TestStatus,
 } from "../types/report";
+import { computeReportStats } from "../features/report/reportStats";
 
 interface ReportPreviewProps {
   basicInfo: BasicInfo;
@@ -40,25 +41,7 @@ export function ReportPreview({
   results,
   attachmentInfo,
 }: ReportPreviewProps) {
-  const total = testCases.length;
-
-  // 已填寫 = result exists with a status other than not_tested.
-  const filledCount = testCases.filter((tc) => {
-    const r = results[tc.id];
-    return r != null && r.status !== "not_tested";
-  }).length;
-
-  const tally: Record<TestStatus, number> = {
-    pass: 0,
-    fail: 0,
-    blocked: 0,
-    need_confirm: 0,
-    not_tested: 0,
-  };
-  for (const tc of testCases) {
-    const status = results[tc.id]?.status ?? "not_tested";
-    tally[status] += 1;
-  }
+  const stats = computeReportStats(testCases, results);
 
   return (
     <section className="card">
@@ -88,14 +71,29 @@ export function ReportPreview({
       </div>
 
       <p className="preview-count">
-        测试案例总数 <strong>{total}</strong> ・ 已填写{" "}
-        <strong>{filledCount}</strong>
+        测试案例总数 <strong>{stats.total}</strong> ・ 已填写{" "}
+        <strong>{stats.filled}</strong> ・ 未填写{" "}
+        <strong>{stats.unfilled}</strong> ・ 完成率{" "}
+        <strong>{stats.completionRate}%</strong>
       </p>
+
+      <div
+        className="progress"
+        role="progressbar"
+        aria-valuenow={stats.completionRate}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
+        <div
+          className="progress-bar"
+          style={{ width: `${stats.completionRate}%` }}
+        />
+      </div>
 
       <div className="stat-chips">
         {SHOWN_STATUSES.map((status) => (
           <span key={status} className={`stat-chip stat-${status}`}>
-            {STATUS_LABELS[status]}: {tally[status]}
+            {STATUS_LABELS[status]}: {stats.tally[status]}
           </span>
         ))}
       </div>

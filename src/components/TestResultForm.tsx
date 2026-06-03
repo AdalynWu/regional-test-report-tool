@@ -50,6 +50,10 @@ export function TestResultForm({ caseId, value, onChange }: TestResultFormProps)
     });
   };
 
+  const showActualResultHint =
+    (current.status === "fail" || current.status === "blocked") &&
+    !current.actualResult.trim();
+
   return (
     <div className="result-form">
       <div className="field-grid">
@@ -84,6 +88,11 @@ export function TestResultForm({ caseId, value, onChange }: TestResultFormProps)
           value={current.actualResult}
           onChange={(e) => patch({ actualResult: e.target.value })}
         />
+        {showActualResultHint && (
+          <p className="field-hint">
+            Fail / Blocked 状态建议填写实际结果或问题描述
+          </p>
+        )}
       </label>
 
       <label className="field">

@@ -1,4 +1,5 @@
 import type { TestReport, TestStatus } from "../../types/report";
+import { computeReportStats } from "./reportStats";
 
 const PLACEHOLDER = "未填写";
 
@@ -164,6 +165,18 @@ const STYLE = `
 /** Build the complete, self-contained HTML report document as a string. */
 export function generateReportHtml(report: TestReport): string {
   const { basicInfo, attachmentInfo, testCases, results } = report;
+  const stats = computeReportStats(testCases, results);
+
+  const summarySection = `
+    <section class="card">
+      <h2 class="section-title">完成度摘要</h2>
+      <div class="info-grid">
+        ${infoRow("测试案例总数", String(stats.total))}
+        ${infoRow("已填写", String(stats.filled))}
+        ${infoRow("未填写", String(stats.unfilled))}
+        ${infoRow("完成率", `${stats.completionRate}%`)}
+      </div>
+    </section>`;
 
   const basicSection = `
     <section class="card">
@@ -277,6 +290,7 @@ export function generateReportHtml(report: TestReport): string {
     <h1>${escapeHtml(report.title)}</h1>
     <p class="generated-at">生成时间：${formatValue(report.generatedAt)}</p>
   </header>
+  ${summarySection}
   ${basicSection}
   ${networkSection}
   ${envScreenshotSection}

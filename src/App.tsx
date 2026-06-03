@@ -14,6 +14,7 @@ import { TestCaseList } from "./components/TestCaseList";
 import { AttachmentForm } from "./components/AttachmentForm";
 import { ReportPreview } from "./components/ReportPreview";
 import { ReportActions } from "./components/ReportActions";
+import { InstructionCard } from "./components/InstructionCard";
 
 function createEmptyBasicInfo(): BasicInfo {
   return {
@@ -89,6 +90,7 @@ function App() {
 
       {!loading && !error && (
         <main className="app-main">
+          <InstructionCard />
           <BasicInfoForm value={basicInfo} onChange={setBasicInfo} />
           <PreTestChecklist />
           <TestCaseList

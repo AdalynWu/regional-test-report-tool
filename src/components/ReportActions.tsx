@@ -67,6 +67,24 @@ export function ReportActions({
   };
 
   const handleDownload = () => {
+    const requiredFields: (keyof BasicInfo)[] = [
+      "testerName",
+      "testDate",
+      "deviceModel",
+      "osVersion",
+      "location",
+      "appVersion",
+    ];
+    const hasMissing = requiredFields.some(
+      (field) => !(basicInfo[field] ?? "").trim(),
+    );
+    if (
+      hasMissing &&
+      !window.confirm("部分基本信息尚未填写，是否仍要下载报告？")
+    ) {
+      return;
+    }
+
     const report: TestReport = {
       title: REPORT_TITLE,
       basicInfo,
