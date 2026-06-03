@@ -79,21 +79,31 @@ export function ReportActions({
   };
 
   const handleDownload = () => {
-    const requiredFields: (keyof BasicInfo)[] = [
-      "testerName",
-      "testDate",
-      "deviceModel",
-      "osVersion",
-      "location",
-      "appVersion",
+    // All basic-info fields (incl. the three screenshots) are required;
+    // block the download until every one is filled.
+    const requiredFields: { key: keyof BasicInfo; label: string }[] = [
+      { key: "testerName", label: "测试人员" },
+      { key: "testDate", label: "测试日期" },
+      { key: "testAccount", label: "测试帐号/密码" },
+      { key: "deviceModel", label: "设备型号" },
+      { key: "osVersion", label: "系统版本" },
+      { key: "location", label: "测试地区" },
+      { key: "appVersion", label: "App 版本" },
+      { key: "isp", label: "电信业者 / ISP" },
+      { key: "networkType", label: "网络类型" },
+      { key: "networkScreenshot", label: "网速测试截图" },
+      { key: "dnsScreenshot", label: "DNS 设置截图" },
+      { key: "processIdScreenshot", label: "Process ID 截图" },
     ];
-    const hasMissing = requiredFields.some(
-      (field) => !(basicInfo[field] ?? "").trim(),
+    const missing = requiredFields.filter(
+      ({ key }) => !(basicInfo[key] ?? "").trim(),
     );
-    if (
-      hasMissing &&
-      !window.confirm("部分基本信息尚未填写，是否仍要下载报告？")
-    ) {
+    if (missing.length > 0) {
+      setStatus(
+        `请先填写所有基本信息后再下载报告，尚未填写：${missing
+          .map((f) => f.label)
+          .join("、")}`,
+      );
       return;
     }
 
@@ -131,10 +141,18 @@ export function ReportActions({
     <section className="card">
       <h2 className="section-title">草稿与报告</h2>
       <div className="button-bar">
-        <button type="button" className="btn btn-secondary" onClick={handleSave}>
+        <button
+          type="button"
+          className="btn btn-secondary"
+          onClick={handleSave}
+        >
           储存草稿
         </button>
-        <button type="button" className="btn btn-secondary" onClick={handleLoad}>
+        <button
+          type="button"
+          className="btn btn-secondary"
+          onClick={handleLoad}
+        >
           载入草稿
         </button>
         <button type="button" className="btn btn-danger" onClick={handleClear}>

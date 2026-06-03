@@ -6,6 +6,6 @@ import type { TestVersionLinks } from "../types/report";
  * After updating these, rebuild and redeploy.
  */
 export const TEST_VERSION_LINKS: TestVersionLinks = {
-  apk: "",
-  ios: "",
+  apk: "https://drive.google.com/file/d/1RvA6rvPTCoLj5kfm1u3uH75rGhhXs_n-/view?usp=drive_link",
+  ios: "https://sw.agtheapp.com/",
 };

@@ -318,9 +318,6 @@ export function generateReportHtml(report: TestReport): string {
       <div class="info-grid">
         ${infoRow("电信业者 / ISP", formatValue(basicInfo.isp))}
         ${infoRow("网络类型", formatValue(basicInfo.networkType))}
-        ${infoRow("DNS 设置", formatValue(basicInfo.dnsSetting))}
-        ${infoRow("下载速度", formatValue(basicInfo.downloadSpeed))}
-        ${infoRow("上传速度", formatValue(basicInfo.uploadSpeed))}
       </div>
     </section>`;
 
@@ -391,7 +388,7 @@ export function generateReportHtml(report: TestReport): string {
       <h2 class="section-title">附件信息</h2>
       <div class="info-grid">
         ${infoRow("录影连结", renderLink(attachmentInfo.recordingUrl))}
-        ${infoRow(".har 档案连结", renderLink(attachmentInfo.harFileUrl))}
+        ${infoRow("测试档案资料夹连结", renderLink(attachmentInfo.testFolderUrl))}
         ${infoRow("其他备注", formatValue(attachmentInfo.extraNote))}
       </div>
     </section>`;

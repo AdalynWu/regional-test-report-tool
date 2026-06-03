@@ -128,7 +128,8 @@ export function ReportPreview({
           录影连结：{attachmentInfo.recordingUrl?.trim() ? "已填写" : "未填写"}
         </span>
         <span>
-          .har 连结：{attachmentInfo.harFileUrl?.trim() ? "已填写" : "未填写"}
+          测试档案资料夹连结：
+          {attachmentInfo.testFolderUrl?.trim() ? "已填写" : "未填写"}
         </span>
       </div>
     </section>

@@ -25,9 +25,6 @@ export interface BasicInfo {
   appVersion: string;
   isp?: string;
   networkType?: string;
-  dnsSetting?: string;
-  downloadSpeed?: string;
-  uploadSpeed?: string;
   networkScreenshot?: string;
   dnsScreenshot?: string;
   processIdScreenshot?: string;
@@ -44,7 +41,7 @@ export interface TestResult {
 
 export interface AttachmentInfo {
   recordingUrl?: string;
-  harFileUrl?: string;
+  testFolderUrl?: string;
   extraNote?: string;
 }
 

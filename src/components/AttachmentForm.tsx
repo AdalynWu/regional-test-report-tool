@@ -28,9 +28,9 @@ export function AttachmentForm({ value, onChange }: AttachmentFormProps) {
         <span className="field-label">测试档案资料夹连结</span>
         <input
           type="text"
-          value={value.harFileUrl ?? ""}
+          value={value.testFolderUrl ?? ""}
           placeholder="e.g https://drive.google.com/drive/folders/xxx"
-          onChange={(e) => update("harFileUrl", e.target.value)}
+          onChange={(e) => update("testFolderUrl", e.target.value)}
         />
       </label>
 

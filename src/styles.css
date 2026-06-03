@@ -104,9 +104,16 @@ body {
 }
 
 .field-label {
+  display: flex;
   font-size: 13px;
   font-weight: 600;
   color: var(--text-muted);
+  align-items: center;
+}
+
+.required-mark {
+  margin-left: 2px;
+  color: var(--danger);
 }
 
 input[type="text"],
@@ -561,6 +568,8 @@ input[type="file"] {
   border-radius: 6px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   z-index: 50;
+  /* Honor explicit "\n" line breaks in the tooltip text. */
+  white-space: pre-line;
 }
 
 .tooltip-arrow {

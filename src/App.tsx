@@ -31,9 +31,6 @@ function createEmptyBasicInfo(): BasicInfo {
     appVersion: "",
     isp: "",
     networkType: "",
-    dnsSetting: "",
-    downloadSpeed: "",
-    uploadSpeed: "",
   };
 }
 
