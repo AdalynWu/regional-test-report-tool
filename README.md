@@ -40,25 +40,134 @@ any time without rebuilding the app (just refresh the page).
 
 ## CSV Format Requirements
 
-The CSV is expected to be exported from the source Google Sheet. It is not a
-plain one-row-per-case file:
+The CSV is exported from the source Google Sheet, so it is **not** a plain
+one-row-per-case file. Read this section before editing
+`public/data/test-cases.csv`.
 
-- The parser scans for the **header row** whose first column is exactly `类别`.
-  Everything before that row is ignored.
-- Recognized header columns (matched after trimming):
-  `类别`, `项目`, `测试规范与要求 Requirement`,
-  `测试步骤与预期 Test Steps & Expection`, `NOTE`.
-- Rows after the header become test cases. Empty `类别` / `项目` cells inherit
-  the previous non-empty value (carry-forward). If still empty, they fall back to
-  `未分类` / `未命名项目`.
-- Fully blank rows and instructional rows (containing `测试前，请先确认`,
-  `提供测试录影`, or `提供本次测试的 .har`) are skipped.
-- A case is flagged as needing a screenshot when its requirement / steps / note
-  mention `截图`, `截圖`, or `screenshot`.
+### File basics
 
-If the `类别` header row is missing, the page shows a clear error. If the file
-loads but yields zero cases, the page shows
-`未解析到任何测试案例，请确认 CSV 格式是否正确`.
+- Encoding **UTF-8**, comma-separated.
+- A cell that contains a comma, a double quote, or a line break **must be wrapped
+  in double quotes** `"…"`. To put a literal `"` inside a quoted cell, double it
+  (`""`). Multi-line cells (e.g. numbered steps) rely on this — see "Line breaks".
+- Anything above the header row is ignored, so the preamble blocks (版本下载 /
+  基础资讯 / 环境检测 …) can stay in the sheet without affecting parsing.
+
+### The header row (required)
+
+The parser scans for the **header row whose first cell is exactly `类别`**
+(trimmed). If no such row exists the page shows an error and no cases load.
+**Column order matters** — the first four columns are read by position:
+
+| Column | Position | Meaning | Required |
+|--------|----------|---------|----------|
+| 类别 | 1 | category (group title) | yes (this anchors the header) |
+| 项目 | 2 | item (article title) | yes |
+| 测试规范与要求 (Requirement) | 3 | requirement | yes |
+| 测试步骤与预期 (Test Steps & Expection) | 4 | test step + expected | yes |
+| NOTE | last | per-case note | optional |
+
+Notes:
+- Columns 1–4 are taken by **position** (1st–4th column). The Requirement / Steps
+  header text may vary slightly (e.g. with or without parentheses) — keep them in
+  this order regardless.
+- `NOTE` is matched by its header name; if absent, note is simply empty.
+- Any extra columns between Steps and NOTE (e.g. `Android 测试结果 01`,
+  `iOS 等待时间 01` …) are **ignored** by the tool — testers fill results inside
+  the app, not in the CSV.
+
+### How rows become cases
+
+Each data row (below the header) becomes one test case = one **Step**, with these
+rules:
+
+1. **类别 carry-forward** — blank 类别 inherits the previous row's 类别.
+2. **项目 carry-forward** — blank 项目 inherits the previous row's 项目.
+3. **Requirement carry-forward** — a merged Requirement cell in the sheet exports
+   as blank on the following rows. A blank Requirement is inherited **only when the
+   row is a continuation of the same article** (same 类别 **and** same 项目 as the
+   previous row). When 项目 changes (a new item) with a blank Requirement, it does
+   **not** inherit — that new item simply has no requirement.
+4. Empty 类别 falls back to `未分类`; empty 项目 falls back to `未命名项目`.
+
+### Article grouping (one card, multiple Steps)
+
+Consecutive rows that share the **same 类别 + 项目 + Requirement** are grouped into
+one card ("article"). The shared 项目 (title) and Requirement are shown once, and
+each row appears as `Step 1`, `Step 2`, … each with its own result form. A
+single-row article shows no "Step" tag.
+
+This is how you author a multi-step case: put 类别 / 项目 / Requirement on the
+first row, then leave 类别 / 项目 / Requirement **blank** on the following rows and
+only fill the Steps column:
+
+```
+直播间,加载效能,"事后回看影片计时，记录四个时间点",从「点击进入直播间」开始计算…
+,,,从「讯号连结中」开始计算…
+,,,从「player loading」开始计算…
+```
+
+### Skipped rows
+
+A row is ignored (not turned into a case) when:
+- it is completely blank, or
+- it contains any of these instruction phrases: `测试前，请先确认`,
+  `提供测试录影`, `提供本次测试的 .har`, or
+- it has no content of its own (its **own** Requirement cell, Steps cell, and NOTE
+  are all empty — inherited Requirement does not count).
+
+### Line breaks inside a cell
+
+To show multiple lines (e.g. numbered steps) wrap the whole cell in double quotes
+and press Enter for each line:
+
+```
+,加载效能,"事后回看影片计时，记录四个时间点","1. 点击「直播」图标进入直播分页
+2. 点击随机一个免付费直播间
+3. 确认是否准确进入对应点击的主播直播间"
+```
+
+Line breaks are preserved (rendered with `white-space: pre-wrap`) in both the app
+and the downloaded report.
+
+### Highlighting words red
+
+Inside a test-case cell (项目 / 测试规范与要求 / 测试步骤与预期), wrap text in
+`{red}…{/red}` to show it red in both the app and the downloaded HTML report —
+e.g. `请务必{red}先下载 .har{/red}再关闭 App`. Markers can span multiple lines;
+unmatched markers (no closing tag) are shown literally as typed.
+
+### Screenshot hint
+
+A case is flagged with「此项目可能需要上传截图」when its Requirement / Steps / NOTE
+mention `截图`, `截圖`, or `screenshot`.
+
+### Error states
+
+- Missing `类别` header row → the page shows a clear error.
+- File loads but yields zero cases → the page shows
+  `未解析到任何测试案例，请确认 CSV 格式是否正确`.
+
+### Minimal example
+
+A complete, valid file. The first line is preamble (ignored because its first
+cell is not `类别`); `登录验证` is a single-step case; `加载效能` is one article
+with two Steps (row 2 leaves 类别/项目/Requirement blank to continue it); the last
+row is a new item that triggers the screenshot hint.
+
+```csv
+本表说明（会被忽略）,,,,
+类别,项目,测试规范与要求 (Requirement),测试步骤与预期 (Test Steps & Expection),NOTE
+登录,登录验证,输入帐号密码并通过验证,成功登录后进入主页,
+直播间,加载效能,"事后回看影片计时，记录以下时间点
+{red}请将耗时填入等待时间栏位{/red}",从「点击进入直播间」开始计算，到出现「讯号连结中」,
+,,,从「讯号连结中」开始计算，到出现「player loading」,
+直播间,回报问题,需上传 screenshot 证明,于直播间点击回报问题并截图,留意弹窗
+```
+
+Renders as: a 登录 group with one card; a 直播间 group containing the 加载效能
+card (Requirement shown once, with a red line, plus Step 1 / Step 2) and the
+回报问题 card (single step, with the「此项目可能需要上传截图」hint).
 
 ## Test Version Links
 

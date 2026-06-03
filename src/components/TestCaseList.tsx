@@ -1,5 +1,6 @@
 import type { TestCase, TestResult } from "../types/report";
-import { TestCaseCard } from "./TestCaseCard";
+import { groupTestCasesByArticle } from "../features/testCase/groupTestCasesByArticle";
+import { TestCaseArticleCard } from "./TestCaseArticleCard";
 
 interface TestCaseListProps {
   testCases: TestCase[];
@@ -43,12 +44,12 @@ export function TestCaseList({
         <section key={category} className="card category-section">
           <h3 className="category-title">{category}</h3>
           <div className="case-list">
-            {cases.map((testCase) => (
-              <TestCaseCard
-                key={testCase.id}
-                testCase={testCase}
-                result={results[testCase.id]}
-                onChange={(result) => onResultChange(testCase.id, result)}
+            {groupTestCasesByArticle(cases).map((article) => (
+              <TestCaseArticleCard
+                key={article.id}
+                article={article}
+                results={results}
+                onResultChange={onResultChange}
               />
             ))}
           </div>

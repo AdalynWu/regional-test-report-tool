@@ -1,5 +1,7 @@
 import type { TestReport, TestStatus } from "../../types/report";
 import { computeReportStats } from "./reportStats";
+import { parseRichText } from "../../utils/richText";
+import { groupTestCasesByArticle } from "../testCase/groupTestCasesByArticle";
 
 const PLACEHOLDER = "未填写";
 
@@ -30,6 +32,22 @@ function formatStatus(status: TestStatus | undefined): string {
 function formatValue(value: string | undefined): string {
   const trimmed = (value ?? "").trim();
   return trimmed ? escapeHtml(trimmed) : PLACEHOLDER;
+}
+
+/**
+ * Escaped value with {red}...{/red} markers converted to highlight spans.
+ * Each text segment is still escaped, so HTML safety is preserved.
+ */
+function renderRichText(value: string | undefined): string {
+  const trimmed = (value ?? "").trim();
+  if (!trimmed) return PLACEHOLDER;
+  return parseRichText(trimmed)
+    .map((seg) =>
+      seg.highlight
+        ? `<span class="hl-danger">${escapeHtml(seg.text)}</span>`
+        : escapeHtml(seg.text),
+    )
+    .join("");
 }
 
 /** Only accept real image data URLs as <img> sources. */
@@ -99,31 +117,50 @@ const STYLE = `
   body {
     margin: 0;
     padding: 24px;
-    background: #f4f5f7;
-    color: #1f2430;
+    background: #f5f7fb;
+    color: #111827;
     font-family: system-ui, "Segoe UI", "Microsoft JhengHei", "PingFang SC", Roboto, sans-serif;
     font-size: 14px;
-    line-height: 1.55;
+    line-height: 1.6;
   }
   .report { max-width: 960px; margin: 0 auto; }
-  .report-header { margin-bottom: 20px; }
-  .report-header h1 { font-size: 26px; margin: 0 0 4px; }
+  .report-header {
+    margin-bottom: 20px;
+    padding: 22px 24px;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    box-shadow: 0 8px 24px rgba(15,23,42,0.06);
+  }
+  .report-header h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 4px; }
   .generated-at { color: #6b7280; margin: 0; }
   .card {
     background: #fff;
-    border: 1px solid #e1e4ea;
-    border-radius: 10px;
-    box-shadow: 0 1px 3px rgba(16,24,40,0.08);
-    padding: 20px;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    box-shadow: 0 8px 24px rgba(15,23,42,0.06);
+    padding: 24px;
     margin-bottom: 20px;
   }
   .section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     font-size: 18px;
-    margin: 0 0 16px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid #e1e4ea;
+    font-weight: 700;
+    margin: 0 0 18px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e5e7eb;
   }
-  .info-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px 24px; }
+  .section-title::before {
+    content: "";
+    width: 4px;
+    align-self: stretch;
+    min-height: 18px;
+    background: #2563eb;
+    border-radius: 999px;
+  }
+  .info-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px 24px; }
   .info-row { display: flex; gap: 8px; }
   .info-label { font-weight: 600; color: #6b7280; min-width: 96px; }
   .info-value { flex: 1; white-space: pre-wrap; word-break: break-word; }
@@ -183,44 +220,87 @@ const STYLE = `
     position: fixed;
     top: 16px;
     right: 20px;
+    appearance: none;
+    -webkit-appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 36px;
+    padding: 8px 16px;
+    font: inherit;
     font-size: 14px;
     font-weight: 600;
-    padding: 8px 16px;
-    color: #1f2430;
+    line-height: 1;
+    color: #111827;
     background: #fff;
-    border: 1px solid #cbd1da;
-    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
     cursor: pointer;
+    user-select: none;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.05s ease;
+  }
+  .img-modal-close:hover {
+    background: #dbeafe;
+    border-color: #2563eb;
+    color: #1e40af;
+  }
+  .img-modal-close:active { transform: translateY(1px); }
+  .img-modal-close:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
   }
   .screenshot-grid { display: flex; flex-wrap: wrap; gap: 10px; }
   .screenshot-row { display: flex; flex-wrap: wrap; gap: 24px; }
   .screenshot-row .info-row { flex-direction: column; gap: 6px; }
   .case {
-    border: 1px solid #e1e4ea;
-    border-radius: 8px;
-    padding: 16px;
+    border: 1px solid #e5e7eb;
+    border-top: 3px solid #dbeafe;
+    border-radius: 10px;
+    padding: 18px;
     margin-bottom: 16px;
-    background: #fcfcfd;
+    background: #fff;
+  }
+  .report-article {
+    border: 1px solid #e5e7eb;
+    border-top: 3px solid #2563eb;
+    border-radius: 10px;
+    padding: 18px;
+    margin-bottom: 16px;
+    background: #fff;
+  }
+  .report-step-list { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
+  .report-step {
+    padding: 14px;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-left: 3px solid #dbeafe;
+    border-radius: 8px;
+  }
+  .report-step-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .step-index {
+    font-size: 12px; font-weight: 700; color: #4b5563;
+    background: #f3f4f6; border: 1px solid #d1d5db; padding: 3px 10px; border-radius: 999px;
   }
   .case-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
   .case-id {
-    font-size: 12px; font-weight: 600; color: #6b7280;
-    background: #eef0f4; padding: 2px 8px; border-radius: 999px;
+    font-size: 12px; font-weight: 700; color: #1e40af;
+    background: #dbeafe; padding: 3px 10px; border-radius: 999px;
   }
-  .case-category { font-size: 12px; color: #2563eb; }
+  .case-category { font-size: 12px; font-weight: 600; color: #2563eb; }
   .case-item { font-size: 15px; margin: 0; }
   .case-block { margin-bottom: 10px; }
   .case-block-label { display: block; font-size: 12px; font-weight: 600; color: #6b7280; margin-bottom: 2px; }
   .case-text { margin: 0; white-space: pre-wrap; word-break: break-word; }
+  .hl-danger { color: #dc2626; font-weight: 600; }
   .status-badge {
-    display: inline-block; padding: 2px 10px; border-radius: 999px;
-    font-size: 12px; font-weight: 600; border: 1px solid #cbd1da; background: #fff;
+    display: inline-block; padding: 3px 12px; border-radius: 999px;
+    font-size: 12px; font-weight: 700; border: 1px solid #cbd5e1; background: #fff;
   }
-  .status-pass { color: #047857; border-color: #6ee7b7; background: #ecfdf5; }
+  .status-pass { color: #15803d; border-color: #86efac; background: #f0fdf4; }
   .status-fail { color: #b91c1c; border-color: #fca5a5; background: #fef2f2; }
   .status-blocked { color: #b45309; border-color: #fcd34d; background: #fffbeb; }
   .status-need_confirm { color: #1d4ed8; border-color: #93c5fd; background: #eff6ff; }
-  .status-not_tested { color: #6b7280; border-color: #d1d5db; background: #f9fafb; }
+  .status-not_tested { color: #64748b; border-color: #cbd5e1; background: #f8fafc; }
   @media (max-width: 640px) {
     .info-grid { grid-template-columns: 1fr; }
   }
@@ -340,39 +420,60 @@ export function generateReportHtml(report: TestReport): string {
       </div>
     </section>`;
 
-  const caseItems = testCases
-    .map((testCase) => {
-      const result = results[testCase.id];
-      const status = result?.status ?? "not_tested";
+  const caseItems = groupTestCasesByArticle(testCases)
+    .map((article) => {
+      const first = article.cases[0];
+      const last = article.cases[article.cases.length - 1];
+      const isMulti = article.cases.length > 1;
+      const idRange = isMulti ? `${first.id} ~ ${last.id}` : first.id;
+
+      const steps = article.cases
+        .map((testCase, index) => {
+          const result = results[testCase.id];
+          const status = result?.status ?? "not_tested";
+          const stepTag = isMulti
+            ? `<span class="step-index">Step ${index + 1}</span>`
+            : "";
+          return `
+          <div class="report-step">
+            <div class="report-step-head">
+              ${stepTag}
+              <span class="case-id">${escapeHtml(testCase.id)}</span>
+            </div>
+            <div class="case-block"><span class="case-block-label">测试步骤与预期</span><p class="case-text">${renderRichText(
+              testCase.stepsAndExpected,
+            )}</p></div>
+            <div class="case-block"><span class="case-block-label">测试结果</span><span class="status-badge status-${status}">${escapeHtml(
+              formatStatus(status),
+            )}</span></div>
+            <div class="case-block"><span class="case-block-label">等待时间</span><p class="case-text">${formatValue(
+              result?.waitingTime,
+            )}</p></div>
+            <div class="case-block"><span class="case-block-label">实际结果</span><p class="case-text">${formatValue(
+              result?.actualResult,
+            )}</p></div>
+            <div class="case-block"><span class="case-block-label">备注</span><p class="case-text">${formatValue(
+              result?.note,
+            )}</p></div>
+            <div class="case-block"><span class="case-block-label">截图</span>${renderImageList(
+              result?.screenshots ?? [],
+              `${testCase.id} 截图`,
+            )}</div>
+          </div>`;
+        })
+        .join("");
+
       return `
-      <div class="case">
+      <div class="report-article">
         <div class="case-head">
-          <span class="case-id">${escapeHtml(testCase.id)}</span>
-          <span class="case-category">${formatValue(testCase.category)}</span>
-          <h3 class="case-item">${formatValue(testCase.item)}</h3>
+          <span class="case-id">${escapeHtml(idRange)}</span>
+          <span class="case-category">${formatValue(article.category)}</span>
+          <h3 class="case-item">${renderRichText(article.item)}</h3>
         </div>
-        <div class="case-block"><span class="case-block-label">测试规范与要求</span><p class="case-text">${formatValue(
-          testCase.requirement,
+        <div class="case-block"><span class="case-block-label">测试规范与要求</span><p class="case-text">${renderRichText(
+          article.requirement,
         )}</p></div>
-        <div class="case-block"><span class="case-block-label">测试步骤与预期</span><p class="case-text">${formatValue(
-          testCase.stepsAndExpected,
-        )}</p></div>
-        <div class="case-block"><span class="case-block-label">测试结果</span><span class="status-badge status-${status}">${escapeHtml(
-          formatStatus(status),
-        )}</span></div>
-        <div class="case-block"><span class="case-block-label">等待时间</span><p class="case-text">${formatValue(
-          result?.waitingTime,
-        )}</p></div>
-        <div class="case-block"><span class="case-block-label">实际结果</span><p class="case-text">${formatValue(
-          result?.actualResult,
-        )}</p></div>
-        <div class="case-block"><span class="case-block-label">备注</span><p class="case-text">${formatValue(
-          result?.note,
-        )}</p></div>
-        <div class="case-block"><span class="case-block-label">截图</span>${renderImageList(
-          result?.screenshots ?? [],
-          `${testCase.id} 截图`,
-        )}</div>
+        <div class="report-step-list">${steps}</div>
       </div>`;
     })
     .join("");

@@ -3,6 +3,7 @@ import type { ChangeEvent } from "react";
 import type { TestResult, TestStatus } from "../types/report";
 import { fileToBase64 } from "../utils/fileToBase64";
 import { ImagePreviewDialog } from "./ImagePreviewDialog";
+import { StatusSelect } from "./StatusSelect";
 
 function isImageDataUrl(value: string | undefined): value is string {
   return typeof value === "string" && value.startsWith("data:image/");
@@ -68,19 +69,15 @@ export function TestResultForm({ caseId, value, onChange }: TestResultFormProps)
   return (
     <div className="result-form">
       <div className="field-grid">
-        <label className="field">
+        <div className="field">
           <span className="field-label">测试结果</span>
-          <select
+          <StatusSelect
             value={current.status}
-            onChange={(e) => patch({ status: e.target.value as TestStatus })}
-          >
-            {STATUS_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </label>
+            options={STATUS_OPTIONS}
+            onChange={(status) => patch({ status })}
+            ariaLabel="测试结果"
+          />
+        </div>
 
         <label className="field">
           <span className="field-label">等待时间</span>

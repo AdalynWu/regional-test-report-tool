@@ -78,6 +78,7 @@ export function parseTestCasesCsv(csvText: string): TestCase[] {
   const cases: TestCase[] = [];
   let lastCategory = "";
   let lastItem = "";
+  let lastRequirement = "";
   let seq = 0;
 
   for (let i = headerRowIndex + 1; i < rows.length; i++) {
@@ -85,20 +86,44 @@ export function parseTestCasesCsv(csvText: string): TestCase[] {
     if (!Array.isArray(row) || isBlankRow(row)) continue;
     if (containsSkipPhrase(row)) continue;
 
-    // Carry-forward raw values (unchanged logic), then apply display fallbacks.
-    const rawCategory = cell(row, colCategory) || lastCategory;
-    const rawItem = cell(row, colItem) || lastItem;
-    lastCategory = rawCategory;
-    lastItem = rawItem;
-    const category = rawCategory || "未分类";
-    const item = rawItem || "未命名项目";
-
-    const requirement = cell(row, colRequirement);
+    // Raw cell values (before carry-forward).
+    const cellCategory = cell(row, colCategory);
+    const cellItem = cell(row, colItem);
+    const cellRequirement = cell(row, colRequirement);
     const stepsAndExpected = cell(row, colSteps);
     const note = colNote >= 0 ? cell(row, colNote) : "";
 
-    // Skip rows that carried category/item forward but have no real content.
-    if (!requirement && !stepsAndExpected && !note) continue;
+    // Skip rows with no real content BEFORE touching carry-forward state, so a
+    // blank/noise row can't pollute lastCategory / lastItem / lastRequirement.
+    if (!cellRequirement && !stepsAndExpected && !note) continue;
+
+    // Continuation check must use the PREVIOUS resolved values (before update).
+    const sameCategory = !cellCategory || cellCategory === lastCategory;
+    const sameItem = !cellItem || cellItem === lastItem;
+    const isSameArticleContinuation = sameCategory && sameItem;
+
+    // Category / item carry-forward (unchanged logic), then display fallbacks.
+    const resolvedCategory = cellCategory || lastCategory;
+    const resolvedItem = cellItem || lastItem;
+    lastCategory = resolvedCategory;
+    lastItem = resolvedItem;
+    const category = resolvedCategory || "未分类";
+    const item = resolvedItem || "未命名项目";
+
+    // Requirement carry-forward (merged cell OR repeated item text in source):
+    // - own value → use it and remember it
+    // - blank + same article (same category & item) → inherit
+    // - blank + new article → no requirement; reset so it doesn't leak forward
+    let requirement: string;
+    if (cellRequirement) {
+      requirement = cellRequirement;
+      lastRequirement = cellRequirement;
+    } else if (isSameArticleContinuation) {
+      requirement = lastRequirement;
+    } else {
+      requirement = "";
+      lastRequirement = "";
+    }
 
     seq += 1;
     cases.push({
