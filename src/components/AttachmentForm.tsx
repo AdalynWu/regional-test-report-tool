@@ -15,21 +15,21 @@ export function AttachmentForm({ value, onChange }: AttachmentFormProps) {
       <h2 className="section-title">附件信息</h2>
 
       <label className="field">
-        <span className="field-label">录影连结</span>
+        <span className="field-label">測試录影连结</span>
         <input
           type="text"
           value={value.recordingUrl ?? ""}
-          placeholder="测试录影的连结"
+          placeholder="e.g https://drive.google.com/file/d/xxx/view"
           onChange={(e) => update("recordingUrl", e.target.value)}
         />
       </label>
 
       <label className="field">
-        <span className="field-label">.har 档案连结</span>
+        <span className="field-label">测试档案资料夹连结</span>
         <input
           type="text"
           value={value.harFileUrl ?? ""}
-          placeholder=".har 档案的下载连结"
+          placeholder="e.g https://drive.google.com/drive/folders/xxx"
           onChange={(e) => update("harFileUrl", e.target.value)}
         />
       </label>

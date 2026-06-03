@@ -8,15 +8,35 @@ interface BasicInfoFormProps {
 }
 
 /** Text fields rendered in order, with their labels. */
-const TEXT_FIELDS: { key: keyof BasicInfo; label: string; placeholder?: string }[] = [
+const TEXT_FIELDS: {
+  key: keyof BasicInfo;
+  label: string;
+  placeholder?: string;
+}[] = [
   { key: "testerName", label: "测试人员" },
   { key: "testDate", label: "测试日期" },
-  { key: "testAccount", label: "测试帐号" },
+  {
+    key: "testAccount",
+    label: "测试帐号/密码",
+    placeholder: "例如：cn_user_test/123456",
+  },
   { key: "deviceModel", label: "设备型号", placeholder: "例如：iPhone 15 Pro" },
-  { key: "osVersion", label: "系统版本", placeholder: "例如：iOS 17.5" },
-  { key: "location", label: "测试地区" },
+  {
+    key: "osVersion",
+    label: "系统版本",
+    placeholder: "例如：iOS 17.5/Android 14",
+  },
+  {
+    key: "location",
+    label: "测试地区(请精确到区)",
+    placeholder: "例如：上海市静安区",
+  },
   { key: "appVersion", label: "App 版本" },
-  { key: "isp", label: "电信业者 / ISP" },
+  {
+    key: "isp",
+    label: "电信业者 / ISP",
+    placeholder: "例如：中国电信 / 中国联通 / 中国移动	",
+  },
   { key: "networkType", label: "网络类型", placeholder: "例如：Wi-Fi / 5G" },
   { key: "dnsSetting", label: "DNS 设置" },
   { key: "downloadSpeed", label: "下载速度", placeholder: "例如：50 Mbps" },

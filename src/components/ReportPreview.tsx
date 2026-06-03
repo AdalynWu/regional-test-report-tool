@@ -43,6 +43,13 @@ export function ReportPreview({
 }: ReportPreviewProps) {
   const stats = computeReportStats(testCases, results);
 
+  const unfilledCases = testCases.filter((tc) => {
+    const r = results[tc.id];
+    return r == null || r.status === "not_tested";
+  });
+  const unfilledShown = unfilledCases.slice(0, 10);
+  const unfilledRest = unfilledCases.length - unfilledShown.length;
+
   return (
     <section className="card">
       <h2 className="section-title">报告预览</h2>
@@ -97,6 +104,24 @@ export function ReportPreview({
           </span>
         ))}
       </div>
+
+      {unfilledCases.length > 0 && (
+        <div className="unfilled-block">
+          <p className="unfilled-title">未填写案例</p>
+          <ul className="unfilled-list">
+            {unfilledShown.map((tc) => (
+              <li key={tc.id}>
+                <span className="unfilled-id">{tc.id}</span>
+                <span className="unfilled-cat">{tc.category}</span>
+                <span className="unfilled-item">{tc.item}</span>
+              </li>
+            ))}
+          </ul>
+          {unfilledRest > 0 && (
+            <p className="unfilled-more">另有 {unfilledRest} 个未填写案例</p>
+          )}
+        </div>
+      )}
 
       <div className="preview-attachments">
         <span>

@@ -64,7 +64,9 @@ export function parseTestCasesCsv(csvText: string): TestCase[] {
   const headerRowIndex = rows.findIndex(
     (row) => Array.isArray(row) && (row[0] ?? "").trim() === HEADER_CATEGORY,
   );
-  if (headerRowIndex === -1) return [];
+  if (headerRowIndex === -1) {
+    throw new Error("未找到「类别」表头，请确认 CSV 格式是否正确");
+  }
 
   const header = rows[headerRowIndex];
   const colCategory = headerIndex(header, HEADER_CATEGORY, 0);
@@ -83,10 +85,13 @@ export function parseTestCasesCsv(csvText: string): TestCase[] {
     if (!Array.isArray(row) || isBlankRow(row)) continue;
     if (containsSkipPhrase(row)) continue;
 
-    const category = cell(row, colCategory) || lastCategory;
-    const item = cell(row, colItem) || lastItem;
-    lastCategory = category;
-    lastItem = item;
+    // Carry-forward raw values (unchanged logic), then apply display fallbacks.
+    const rawCategory = cell(row, colCategory) || lastCategory;
+    const rawItem = cell(row, colItem) || lastItem;
+    lastCategory = rawCategory;
+    lastItem = rawItem;
+    const category = rawCategory || "未分类";
+    const item = rawItem || "未命名项目";
 
     const requirement = cell(row, colRequirement);
     const stepsAndExpected = cell(row, colSteps);

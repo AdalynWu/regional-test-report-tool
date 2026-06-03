@@ -4,6 +4,7 @@ import type {
   AttachmentInfo,
   BasicInfo,
   TestCase,
+  TestCaseMeta,
   TestReportDraft,
   TestResult,
 } from "./types/report";
@@ -15,6 +16,7 @@ import { AttachmentForm } from "./components/AttachmentForm";
 import { ReportPreview } from "./components/ReportPreview";
 import { ReportActions } from "./components/ReportActions";
 import { InstructionCard } from "./components/InstructionCard";
+import { TestCaseMetaCard } from "./components/TestCaseMetaCard";
 
 function createEmptyBasicInfo(): BasicInfo {
   return {
@@ -37,6 +39,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [testCases, setTestCases] = useState<TestCase[]>([]);
+  const [meta, setMeta] = useState<TestCaseMeta | null>(null);
 
   const [basicInfo, setBasicInfo] = useState<BasicInfo>(createEmptyBasicInfo);
   const [results, setResults] = useState<Record<string, TestResult>>({});
@@ -46,9 +49,10 @@ function App() {
     let cancelled = false;
 
     fetchTestCases()
-      .then((cases) => {
+      .then(({ testCases, meta }) => {
         if (cancelled) return;
-        setTestCases(cases);
+        setTestCases(testCases);
+        setMeta(meta);
       })
       .catch((err: unknown) => {
         if (cancelled) return;
@@ -76,7 +80,7 @@ function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>区域测试报告工具</h1>
+        <h1>Ramen 测试报告工具</h1>
         <p className="app-subtitle">填写测试结果并上传截图</p>
       </header>
 
@@ -88,9 +92,16 @@ function App() {
         </div>
       )}
 
-      {!loading && !error && (
+      {!loading && !error && testCases.length === 0 && (
+        <div className="card error-message">
+          <p>未解析到任何测试案例，请确认 CSV 格式是否正确</p>
+        </div>
+      )}
+
+      {!loading && !error && testCases.length > 0 && (
         <main className="app-main">
           <InstructionCard />
+          {meta && <TestCaseMetaCard meta={meta} />}
           <BasicInfoForm value={basicInfo} onChange={setBasicInfo} />
           <PreTestChecklist />
           <TestCaseList
@@ -110,6 +121,7 @@ function App() {
             results={results}
             attachmentInfo={attachmentInfo}
             testCases={testCases}
+            testCaseMeta={meta ?? undefined}
             onLoadDraft={handleLoadDraft}
           />
         </main>

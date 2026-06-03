@@ -48,6 +48,12 @@ export interface AttachmentInfo {
   extraNote?: string;
 }
 
+export interface TestCaseMeta {
+  sourceName: string;
+  loadedAt: string;
+  totalCases: number;
+}
+
 export interface TestReportDraft {
   basicInfo: BasicInfo;
   results: Record<string, TestResult>;
@@ -61,4 +67,5 @@ export interface TestReport {
   results: Record<string, TestResult>;
   attachmentInfo: AttachmentInfo;
   generatedAt: string;
+  testCaseMeta?: TestCaseMeta;
 }

@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 const CHECKLIST_ITEMS = [
-  "已移除旧版 App 并重新安装",
+  "已移除前一版 App 并重新安装",
   "已关闭 VPN",
   "设备电量高于 25%",
   "未开启省电模式",

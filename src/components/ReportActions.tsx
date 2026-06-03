@@ -4,6 +4,7 @@ import type {
   AttachmentInfo,
   BasicInfo,
   TestCase,
+  TestCaseMeta,
   TestReport,
   TestReportDraft,
   TestResult,
@@ -15,12 +16,14 @@ import {
 } from "../features/report/reportStorage";
 import { generateReportHtml } from "../features/report/generateReportHtml";
 import { downloadHtml } from "../features/report/downloadHtml";
+import { computeReportStats } from "../features/report/reportStats";
 
 interface ReportActionsProps {
   basicInfo: BasicInfo;
   results: Record<string, TestResult>;
   attachmentInfo: AttachmentInfo;
   testCases: TestCase[];
+  testCaseMeta?: TestCaseMeta;
   onLoadDraft: (draft: TestReportDraft) => void;
 }
 
@@ -41,6 +44,7 @@ export function ReportActions({
   results,
   attachmentInfo,
   testCases,
+  testCaseMeta,
   onLoadDraft,
 }: ReportActionsProps) {
   const [status, setStatus] = useState("");
@@ -85,6 +89,16 @@ export function ReportActions({
       return;
     }
 
+    const stats = computeReportStats(testCases, results);
+    if (
+      stats.completionRate < 100 &&
+      !window.confirm(
+        `目前仍有 ${stats.unfilled} 个测试案例尚未填写，是否仍要下载报告？`,
+      )
+    ) {
+      return;
+    }
+
     const report: TestReport = {
       title: REPORT_TITLE,
       basicInfo,
@@ -92,6 +106,7 @@ export function ReportActions({
       results,
       attachmentInfo,
       generatedAt: dayjs().format("YYYY-MM-DD HH:mm"),
+      testCaseMeta,
     };
     const html = generateReportHtml(report);
     const location = sanitizeForFilename(basicInfo.location, "unknown");

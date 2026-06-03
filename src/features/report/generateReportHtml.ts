@@ -150,8 +150,8 @@ const STYLE = `
   .status-pass { color: #047857; border-color: #6ee7b7; background: #ecfdf5; }
   .status-fail { color: #b91c1c; border-color: #fca5a5; background: #fef2f2; }
   .status-blocked { color: #b45309; border-color: #fcd34d; background: #fffbeb; }
-  .status-need_confirm { color: #6d28d9; border-color: #c4b5fd; background: #f5f3ff; }
-  .status-not_tested { color: #6b7280; }
+  .status-need_confirm { color: #1d4ed8; border-color: #93c5fd; background: #eff6ff; }
+  .status-not_tested { color: #6b7280; border-color: #d1d5db; background: #f9fafb; }
   @media (max-width: 640px) {
     .info-grid { grid-template-columns: 1fr; }
   }
@@ -167,11 +167,19 @@ export function generateReportHtml(report: TestReport): string {
   const { basicInfo, attachmentInfo, testCases, results } = report;
   const stats = computeReportStats(testCases, results);
 
+  const meta = report.testCaseMeta;
+  const metaRows = meta
+    ? `
+        ${infoRow("测试案例来源", formatValue(meta.sourceName))}
+        ${infoRow("载入时间", formatValue(meta.loadedAt))}
+        ${infoRow("测试案例总数", String(meta.totalCases))}`
+    : "";
+
   const summarySection = `
     <section class="card">
       <h2 class="section-title">完成度摘要</h2>
       <div class="info-grid">
-        ${infoRow("测试案例总数", String(stats.total))}
+        ${metaRows || infoRow("测试案例总数", String(stats.total))}
         ${infoRow("已填写", String(stats.filled))}
         ${infoRow("未填写", String(stats.unfilled))}
         ${infoRow("完成率", `${stats.completionRate}%`)}
