@@ -30,10 +30,10 @@ The Vite `base` does not affect `npm run dev` — local dev always serves from `
 Place the test-case CSV at:
 
 ```
-public/data/test-cases.csv
+public/data/ramen-test-cases.csv
 ```
 
-It is fetched at runtime from `${import.meta.env.BASE_URL}data/test-cases.csv`,
+It is fetched at runtime from `${import.meta.env.BASE_URL}data/ramen-test-cases.csv`,
 so it resolves correctly in both local dev (`/data/...`) and on GitHub Pages
 (`/regional-test-report-tool/data/...`). The file is **not** bundled — replace it
 any time without rebuilding the app (just refresh the page).
@@ -42,7 +42,7 @@ any time without rebuilding the app (just refresh the page).
 
 The CSV is exported from the source Google Sheet, so it is **not** a plain
 one-row-per-case file. Read this section before editing
-`public/data/test-cases.csv`.
+`public/data/ramen-test-cases.csv`.
 
 ### File basics
 
@@ -59,15 +59,16 @@ The parser scans for the **header row whose first cell is exactly `类别`**
 (trimmed). If no such row exists the page shows an error and no cases load.
 **Column order matters** — the first four columns are read by position:
 
-| Column | Position | Meaning | Required |
-|--------|----------|---------|----------|
-| 类别 | 1 | category (group title) | yes (this anchors the header) |
-| 项目 | 2 | item (article title) | yes |
-| 测试规范与要求 (Requirement) | 3 | requirement | yes |
-| 测试步骤与预期 (Test Steps & Expection) | 4 | test step + expected | yes |
-| NOTE | last | per-case note | optional |
+| Column                                  | Position | Meaning                | Required                      |
+| --------------------------------------- | -------- | ---------------------- | ----------------------------- |
+| 类别                                    | 1        | category (group title) | yes (this anchors the header) |
+| 项目                                    | 2        | item (article title)   | yes                           |
+| 测试规范与要求 (Requirement)            | 3        | requirement            | yes                           |
+| 测试步骤与预期 (Test Steps & Expection) | 4        | test step + expected   | yes                           |
+| NOTE                                    | last     | per-case note          | optional                      |
 
 Notes:
+
 - Columns 1–4 are taken by **position** (1st–4th column). The Requirement / Steps
   header text may vary slightly (e.g. with or without parentheses) — keep them in
   this order regardless.
@@ -110,6 +111,7 @@ only fill the Steps column:
 ### Skipped rows
 
 A row is ignored (not turned into a case) when:
+
 - it is completely blank, or
 - it contains any of these instruction phrases: `测试前，请先确认`,
   `提供测试录影`, `提供本次测试的 .har`, or
@@ -199,8 +201,8 @@ src/config/testVersionLinks.ts
 
 ```ts
 export const TEST_VERSION_LINKS: TestVersionLinks = {
-  apk: "",   // Android APK download URL (http/https)
-  ios: "",   // iOS download URL (http/https)
+  apk: "", // Android APK download URL (http/https)
+  ios: "", // iOS download URL (http/https)
 };
 ```
 
@@ -231,7 +233,7 @@ To enable it once:
 `vite.config.ts` sets:
 
 ```ts
-base: "/regional-test-report-tool/"
+base: "/regional-test-report-tool/";
 ```
 
 This **must** match the GitHub Pages repository path. The current repo is
@@ -241,11 +243,11 @@ This **must** match the GitHub Pages repository path. The current repo is
 must update `base` in `vite.config.ts` to match the new name**, for example:
 
 ```ts
-base: "/qa-test-report-tool/"
+base: "/qa-test-report-tool/";
 ```
 
 If `base` does not match the deployed path, assets (JS, CSS) and the
-`data/test-cases.csv` fetch will return 404 on GitHub Pages.
+`data/ramen-test-cases.csv` fetch will return 404 on GitHub Pages.
 
 ## Tester Workflow
 

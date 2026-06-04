@@ -2,7 +2,7 @@ import dayjs from "dayjs";
 import type { TestCase, TestCaseMeta } from "../../types/report";
 import { parseTestCasesCsv } from "./parseTestCasesCsv";
 
-const SOURCE_NAME = "test-cases.csv";
+const SOURCE_NAME = "ramen-test-cases.csv";
 
 export interface FetchTestCasesResult {
   testCases: TestCase[];
