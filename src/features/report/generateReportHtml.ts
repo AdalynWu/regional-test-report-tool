@@ -286,10 +286,10 @@ const STYLE = `
     font-size: 12px; font-weight: 700; color: #1e40af;
     background: #dbeafe; padding: 3px 10px; border-radius: 999px;
   }
-  .case-category { font-size: 12px; font-weight: 600; color: #2563eb; }
+  .case-category { font-size: 18px; font-weight: 600; color: #2563eb; }
   .case-item { font-size: 15px; margin: 0; }
   .case-block { margin-bottom: 10px; }
-  .case-block-label { display: block; font-size: 12px; font-weight: 600; color: #6b7280; margin-bottom: 2px; }
+  .case-block-label { display: block; font-size: 16px; font-weight: 600; color: #6b7280; margin-bottom: 2px; }
   .case-text { margin: 0; white-space: pre-wrap; word-break: break-word; }
   .hl-danger { color: #dc2626; font-weight: 600; }
   .status-badge {

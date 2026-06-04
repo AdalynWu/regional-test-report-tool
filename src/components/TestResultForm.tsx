@@ -4,6 +4,7 @@ import type { TestResult, TestStatus } from "../types/report";
 import { fileToBase64 } from "../utils/fileToBase64";
 import { ImagePreviewDialog } from "./ImagePreviewDialog";
 import { StatusSelect } from "./StatusSelect";
+import { FileUploadButton } from "./FileUploadButton";
 
 function isImageDataUrl(value: string | undefined): value is string {
   return typeof value === "string" && value.startsWith("data:image/");
@@ -113,10 +114,14 @@ export function TestResultForm({ caseId, value, onChange }: TestResultFormProps)
 
       <div className="field">
         <span className="field-label">截图（可多选）</span>
-        <input
-          type="file"
+        <FileUploadButton
           accept="image/*"
           multiple
+          fileName={
+            current.screenshots.length > 0
+              ? `已上传 ${current.screenshots.length} 张图片`
+              : undefined
+          }
           onChange={(e) => void handleScreenshots(e)}
         />
         {current.screenshots.length > 0 && (

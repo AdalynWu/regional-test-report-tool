@@ -4,6 +4,7 @@ import type { BasicInfo } from "../types/report";
 import { fileToBase64 } from "../utils/fileToBase64";
 import { HelpTooltip } from "./HelpTooltip";
 import { ImagePreviewDialog } from "./ImagePreviewDialog";
+import { FileUploadButton } from "./FileUploadButton";
 
 interface BasicInfoFormProps {
   value: BasicInfo;
@@ -94,6 +95,7 @@ function isImageDataUrl(value: string | undefined): value is string {
 
 export function BasicInfoForm({ value, onChange }: BasicInfoFormProps) {
   const [previewSrc, setPreviewSrc] = useState<string | null>(null);
+  const [fileNames, setFileNames] = useState<Record<string, string>>({});
 
   const update = (field: keyof BasicInfo, fieldValue: string | undefined) => {
     onChange({ ...value, [field]: fieldValue });
@@ -106,9 +108,15 @@ export function BasicInfoForm({ value, onChange }: BasicInfoFormProps) {
     const file = event.target.files?.[0];
     if (!file) return;
     const base64 = await fileToBase64(file);
+    setFileNames((prev) => ({ ...prev, [field]: file.name }));
     update(field, base64);
-    // Allow re-selecting the same file later.
+    // Allow re-selecting the same file later (display name is tracked above).
     event.target.value = "";
+  };
+
+  const removeScreenshot = (field: keyof BasicInfo) => {
+    setFileNames((prev) => ({ ...prev, [field]: "" }));
+    update(field, undefined);
   };
 
   const openPreview = (src: string | undefined) => {
@@ -153,10 +161,9 @@ export function BasicInfoForm({ value, onChange }: BasicInfoFormProps) {
                 </span>
                 {tooltip && <HelpTooltip text={tooltip} />}
               </span>
-              <input
-                type="file"
+              <FileUploadButton
                 accept="image/*"
-                aria-required="true"
+                fileName={fileNames[key]}
                 onChange={(e) => void handleScreenshot(key, e)}
               />
               {isImageDataUrl(current) && (
@@ -175,7 +182,7 @@ export function BasicInfoForm({ value, onChange }: BasicInfoFormProps) {
                     <button
                       type="button"
                       className="thumb-remove"
-                      onClick={() => update(key, undefined)}
+                      onClick={() => removeScreenshot(key)}
                     >
                       移除
                     </button>
