@@ -1,6 +1,7 @@
 import type { TestCase, TestResult } from "../types/report";
 import { groupTestCasesByArticle } from "../features/testCase/groupTestCasesByArticle";
 import { TestCaseArticleCard } from "./TestCaseArticleCard";
+import { RichText } from "./RichText";
 
 interface TestCaseListProps {
   testCases: TestCase[];
@@ -43,7 +44,9 @@ export function TestCaseList({
       {grouped.map(([category, cases], index) => (
         <section key={category} className="card category-section">
           {index === 0 && <h2 className="group-heading">测试案例</h2>}
-          <h3 className="category-title">{category}</h3>
+          <h3 className="category-title">
+            <RichText text={category} />
+          </h3>
           <div className="case-list">
             {groupTestCasesByArticle(cases).map((article) => (
               <TestCaseArticleCard

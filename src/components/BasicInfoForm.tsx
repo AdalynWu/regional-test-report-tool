@@ -9,6 +9,7 @@ import { fileToBase64 } from "../utils/fileToBase64";
 import { HelpTooltip } from "./HelpTooltip";
 import { ImagePreviewDialog } from "./ImagePreviewDialog";
 import { FileUploadButton } from "./FileUploadButton";
+import { SelectMenu } from "./SelectMenu";
 
 interface BasicInfoFormProps {
   value: BasicInfo;
@@ -65,41 +66,45 @@ export function BasicInfoForm({
       <div className="field-grid">
         {fields.map((field) => {
           const current = (value[field.key] as string | undefined) ?? "";
+          const labelContent = (
+            <span className="field-label">
+              {field.label}
+              {field.required && (
+                <span className="required-mark" aria-hidden="true">
+                  *
+                </span>
+              )}
+              {field.tooltip && <HelpTooltip text={field.tooltip} />}
+            </span>
+          );
+
+          // Custom dropdown lives in a <div> (not <label>) so clicking the label
+          // area doesn't toggle the trigger button.
+          if (field.type === "select") {
+            return (
+              <div key={field.key} className="field">
+                {labelContent}
+                <SelectMenu
+                  value={current}
+                  options={field.options ?? []}
+                  ariaLabel={field.label}
+                  onChange={(v) => update(field.key, v)}
+                />
+              </div>
+            );
+          }
+
           return (
             <label key={field.key} className="field">
-              <span className="field-label">
-                {field.label}
-                {field.required && (
-                  <span className="required-mark" aria-hidden="true">
-                    *
-                  </span>
-                )}
-                {field.tooltip && <HelpTooltip text={field.tooltip} />}
-              </span>
-              {field.type === "select" ? (
-                <select
-                  value={current}
-                  required={field.required}
-                  aria-required={field.required}
-                  onChange={(e) => update(field.key, e.target.value)}
-                >
-                  <option value="">请选择</option>
-                  {field.options?.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  type={field.type === "date" ? "date" : "text"}
-                  value={current}
-                  placeholder={field.placeholder}
-                  required={field.required}
-                  aria-required={field.required}
-                  onChange={(e) => update(field.key, e.target.value)}
-                />
-              )}
+              {labelContent}
+              <input
+                type={field.type === "date" ? "date" : "text"}
+                value={current}
+                placeholder={field.placeholder}
+                required={field.required}
+                aria-required={field.required}
+                onChange={(e) => update(field.key, e.target.value)}
+              />
             </label>
           );
         })}

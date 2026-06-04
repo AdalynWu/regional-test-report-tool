@@ -27,6 +27,7 @@ interface ReportActionsProps {
   testCaseMeta?: TestCaseMeta;
   project: ProjectConfig;
   draftScope?: string;
+  testDomainUrl?: string;
   onLoadDraft: (draft: TestReportDraft) => void;
 }
 
@@ -56,6 +57,7 @@ export function ReportActions({
   testCaseMeta,
   project,
   draftScope,
+  testDomainUrl,
   onLoadDraft,
 }: ReportActionsProps) {
   const [status, setStatus] = useState("");
@@ -122,6 +124,7 @@ export function ReportActions({
       testCaseMeta,
       testVersionLinks: project.testVersionLinks,
       showVersionDownloadSection: project.showVersionDownloadSection,
+      testDomainUrl,
     };
     const html = generateReportHtml(report);
     const location = basicInfo.location.trim() || "未填写地区";

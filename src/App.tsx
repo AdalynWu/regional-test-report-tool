@@ -19,6 +19,7 @@ import { ReportActions } from "./components/ReportActions";
 import { InstructionCard } from "./components/InstructionCard";
 import { TestCaseMetaCard } from "./components/TestCaseMetaCard";
 import { TestVersionDownloadSection } from "./components/TestVersionDownloadSection";
+import { TestDomainSection } from "./components/TestDomainSection";
 import { SideNav } from "./components/SideNav";
 
 function createEmptyBasicInfo(): BasicInfo {
@@ -163,6 +164,11 @@ function App() {
                 />
               </section>
             )}
+            {project.testDomainLinks && (
+              <section id="test-domain" className="section-anchor">
+                <TestDomainSection url={project.testDomainLinks.url} />
+              </section>
+            )}
             <section id="test-cases" className="section-anchor">
               {needsPaymentMethod ? (
                 <div className="card">
@@ -201,6 +207,7 @@ function App() {
                 testCaseMeta={meta ?? undefined}
                 project={project}
                 draftScope={draftScope}
+                testDomainUrl={project.testDomainLinks?.url}
                 onLoadDraft={handleLoadDraft}
               />
             </section>

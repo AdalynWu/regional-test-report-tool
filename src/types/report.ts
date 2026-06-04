@@ -33,8 +33,8 @@ export interface BasicInfo {
   dnsScreenshot?: string;
   processIdScreenshot?: string;
   /** nav-site project */
-  iosDeviceModel?: string;
-  androidDeviceModel?: string;
+  iosDeviceInfo?: string;
+  androidDeviceInfo?: string;
   /** payment project */
   paymentMethod?: PaymentMethod;
 }
@@ -82,4 +82,6 @@ export interface TestReport {
   testVersionLinks?: TestVersionLinks;
   /** When false, the report omits the version-download section. */
   showVersionDownloadSection?: boolean;
+  /** Test URL for projects that use one (e.g. nav-site). */
+  testDomainUrl?: string;
 }

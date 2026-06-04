@@ -32,6 +32,8 @@ export interface ProjectConfig {
   preTestChecklistItems: string[];
   showVersionDownloadSection: boolean;
   testVersionLinks: TestVersionLinks;
+  /** Optional single test URL section (e.g. nav-site「測試網址」). */
+  testDomainLinks?: { url: string };
   caseCategoryMode?: CaseCategoryMode;
   filterByPaymentMethod?: boolean;
 }
@@ -51,10 +53,11 @@ const DNS_TOOLTIP =
   "4. 请截图该页面，确保能看到 DNS 地址（例如：192.168.1.1 或 114.114.114.114）。";
 const OS_VERSION_TOOLTIP = "打开 App 后，便会显示在画面底部";
 const SPEED_TOOLTIP =
-  "请使用测速工具记录本次测试环境的下载与上传速度，并上传测速截图。";
+  "请使用测速工具记录本次测试环境的下载与上传速度，并上传测速截图";
 const PROCESS_ID_TOOLTIP =
   "打开 App 后，直接点击 Frontend Domain Input 弹窗的 Confirm 按钮后，便会显示在画面底部";
-
+const PAYMENT_METHOD_TOOLTIP =
+  "请依照当日指定的款方式选择对应的选项，以确保测试案例的正确过滤与分类";
 export const DEFAULT_PROJECT_ID: ProjectId = "ramen";
 
 export const PROJECTS: Record<ProjectId, ProjectConfig> = {
@@ -80,7 +83,12 @@ export const PROJECTS: Record<ProjectId, ProjectConfig> = {
       "此工具不会自动上传资料，请自行保存报告",
     ],
     basicInfoFields: [
-      { key: "testerName", label: "测试人员", required: true, placeholder: "例如：上海" },
+      {
+        key: "testerName",
+        label: "测试人员",
+        required: true,
+        placeholder: "例如：上海",
+      },
       { key: "testDate", label: "测试日期", type: "date", required: true },
       {
         key: "testAccount",
@@ -172,32 +180,70 @@ export const PROJECTS: Record<ProjectId, ProjectConfig> = {
     caseCategoryMode: "category",
     filterByPaymentMethod: false,
     instructions: [
-      "请务必确认基础资讯与环境检测皆已完成。",
-      "若使用预设浏览器遇到无法访问，请先尝试第二种浏览器。",
-      "若仍无法开启，再使用 VPN 确认是否能访问，并立即在群组回报。",
-      "请务必每次使用无痕模式进行访问。",
-      "完成后请下载 HTML 报告，并上传至指定 Google Drive。",
+      "請分別使用 android 以及 iOS 测试{red}各一次{/red}",
+      "请务必确认基础资讯与环境检测皆已完成",
+      "若使用预设浏览器遇到无法访问的情况，请先{red}尝试第二种浏览器{/red}",
+      "若仍无法开启，再使用 VPN 确认是否能访问，并立即在群组回报",
+      "请务必每次使用{red}无痕模式{/red}进行访问",
+      "完成后请自行下载 HTML 报告，并上传至指定 Google Drive 资料夹",
+      "测试影片需放在 google 云端資料夾，并要开权限让测试人员查看",
     ],
     basicInfoFields: [
+      {
+        key: "testerName",
+        label: "测试人员",
+        placeholder: "例如：上海",
+        required: true,
+      },
       { key: "testDate", label: "测试日期", type: "date", required: true },
-      { key: "location", label: "所在位置", required: true },
-      { key: "testAccount", label: "测试帐号 / 测试密码" },
-      { key: "iosDeviceModel", label: "iOS 设备型号" },
-      { key: "androidDeviceModel", label: "Android 设备型号" },
-      { key: "osVersion", label: "OS 版本" },
-      { key: "isp", label: "电信商 ISP" },
-      { key: "networkType", label: "网路连线方式" },
+      {
+        key: "location",
+        label: "测试地区(请精确到区)",
+        required: true,
+        placeholder: "例如：上海市静安区",
+      },
+      {
+        key: "testAccount",
+        label: "测试帐号 / 测试密码",
+        required: true,
+        placeholder: "例如：cn_user_test/123456",
+      },
+      {
+        key: "iosDeviceInfo",
+        label: "iOS 设备信息",
+        required: true,
+        placeholder: "例如：iPhone 15 Pro / iOS 17.5 / Safari 17",
+        tooltip: "请填写本次 iOS 测试设备的型号+系统版本+浏览器信息。",
+      },
+      {
+        key: "androidDeviceInfo",
+        label: "Android 设备信息",
+        required: true,
+        placeholder: "例如：小米 14 / Android 14 / Chrome 114",
+        tooltip: "请填写本次 Android 测试设备的型号与系统版本+浏览器信息",
+      },
+      {
+        key: "isp",
+        label: "电信商 ISP",
+        required: true,
+        placeholder: "例如：中国电信 / 中国联通 / 中国移动",
+      },
+      {
+        key: "networkType",
+        label: "网络类型",
+        required: true,
+        placeholder: "例如：Wi-Fi / 5G / 4G",
+      },
     ],
     preTestChecklistItems: [
-      "已确认测试帐号与密码可用",
-      "已确认 iOS / Android 测试设备",
-      "已确认所在位置",
-      "已确认电信商 ISP",
+      "已确认测试时电量高于 25%",
+      "已确认不处于省电模式",
+      "已确认不為一边充电的状况",
+      "已重启设备或开关飞行模式，确保 VPN 的关闭，无 VPN 残留路径",
       "已使用无痕模式进行访问",
-      "若预设浏览器无法访问，已尝试第二种浏览器",
-      "若仍无法访问，已使用 VPN 交叉确认并回报",
     ],
     testVersionLinks: { apk: "", ios: "" },
+    testDomainLinks: { url: "https://nav-ws-sw.agtheapp.com" },
   },
 
   payment: {
@@ -209,25 +255,52 @@ export const PROJECTS: Record<ProjectId, ProjectConfig> = {
     caseCategoryMode: "paymentMethod",
     filterByPaymentMethod: true,
     instructions: [
-      "请先完成 Ramen 的例行测试，再使用 Ramen 进行金流测试。",
-      "测试时请勿使用 VPN。",
-      "请使用测试装置直接进行萤幕录影，或使用另一支手机录影。",
-      "录影需要清楚拍到跳转支付的过程。",
-      "请依照当日指定的付款方式与装置进行测试。",
-      "测试完毕后请在群组回报，并附上订单 ID、付款纪录、银行帐号以利报帐。",
-      "完成后请下载 HTML 报告，并上传至指定 Google Drive。",
+      "请先完成 Ramen 的例行测试，再使用 Ramen 进行本金流测试",
+      "测试时{red}请勿使用 VPN{/red}",
+      "请使用测试装置直接进行萤幕录影，或使用另一支手机录影",
+      "录影需要清楚拍到跳转支付的过程",
+      "请依照{red}当日指定的付款方式与装置{/red}进行测试",
+      "测试完毕后请在群组回报，并附上订单 ID、付款纪录、银行帐号以利报帐",
+      "完成后请下载 HTML 报告，并上传至指定 Google Drive 资料夹",
     ],
     basicInfoFields: [
+      {
+        key: "testerName",
+        label: "测试人员",
+        required: true,
+        placeholder: "例如：上海",
+      },
       { key: "testDate", label: "测试日期", type: "date", required: true },
-      { key: "location", label: "所在位置", required: true },
-      { key: "testAccount", label: "测试帐号 / 测试密码" },
-      { key: "deviceModel", label: "设备型号", required: true },
-      { key: "osVersion", label: "OS 版本", required: true },
+      {
+        key: "location",
+        label: "所在位置",
+        required: true,
+        placeholder: "例如：上海市静安区",
+      },
+      {
+        key: "testAccount",
+        label: "测试帐号 / 测试密码",
+        required: true,
+        placeholder: "例如：cn_user_test/123456",
+      },
+      {
+        key: "deviceModel",
+        label: "设备型号",
+        required: true,
+        placeholder: "例如：小米 14",
+      },
+      {
+        key: "osVersion",
+        label: "OS 版本",
+        required: true,
+        placeholder: "例如：Android 14",
+      },
       {
         key: "paymentMethod",
         label: "付款方式",
         type: "select",
         required: true,
+        tooltip: PAYMENT_METHOD_TOOLTIP,
         options: [
           { label: "支付宝", value: "alipay" },
           { label: "微信", value: "wechat" },
@@ -236,14 +309,8 @@ export const PROJECTS: Record<ProjectId, ProjectConfig> = {
     ],
     preTestChecklistItems: [
       "已确认当日指定付款方式",
-      "已确认测试帐号与密码可用",
-      "已确认测试装置与 OS 版本",
-      "已关闭 VPN",
-      "已开启完整萤幕录影",
-      "录影可清楚看到跳转支付过程",
-      "已确认测试后会提供订单 ID",
-      "已确认测试后会提供付款纪录",
-      "已确认测试后会提供银行帐号以利报帐",
+      "已确认指定测试装置",
+      "已确认登录测试帐号",
     ],
     testVersionLinks: { apk: "", ios: "" },
   },

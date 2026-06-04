@@ -381,6 +381,16 @@ export function generateReportHtml(report: TestReport): string {
       </div>
     </section>`;
 
+  const testDomainSection = report.testDomainUrl?.trim()
+    ? `
+    <section class="card">
+      <h2 class="section-title">测试网址</h2>
+      <div class="info-grid">
+        ${infoRow("测试网址", renderLink(report.testDomainUrl))}
+      </div>
+    </section>`
+    : "";
+
   // Conditional rows for project-specific fields (empty for Ramen → omitted).
   const paymentMethodLabel =
     basicInfo.paymentMethod === "alipay"
@@ -389,11 +399,11 @@ export function generateReportHtml(report: TestReport): string {
         ? "微信"
         : "";
   const extraBasicRows = [
-    basicInfo.iosDeviceModel?.trim()
-      ? infoRow("iOS 设备型号", formatValue(basicInfo.iosDeviceModel))
+    basicInfo.iosDeviceInfo?.trim()
+      ? infoRow("iOS 设备信息", formatValue(basicInfo.iosDeviceInfo))
       : "",
-    basicInfo.androidDeviceModel?.trim()
-      ? infoRow("Android 设备型号", formatValue(basicInfo.androidDeviceModel))
+    basicInfo.androidDeviceInfo?.trim()
+      ? infoRow("Android 设备信息", formatValue(basicInfo.androidDeviceInfo))
       : "",
     paymentMethodLabel ? infoRow("付款方式", escapeHtml(paymentMethodLabel)) : "",
   ].join("");
@@ -498,7 +508,7 @@ export function generateReportHtml(report: TestReport): string {
       <div class="report-article">
         <div class="case-head">
           <span class="case-id">${escapeHtml(idRange)}</span>
-          <span class="case-category">${formatValue(article.category)}</span>
+          <span class="case-category">${renderRichText(article.category)}</span>
           <h3 class="case-item">${renderRichText(article.item)}</h3>
         </div>
         <div class="case-block"><span class="case-block-label">测试规范与要求</span><p class="case-text">${renderRichText(
@@ -541,6 +551,7 @@ export function generateReportHtml(report: TestReport): string {
   </header>
   ${summarySection}
   ${versionSection}
+  ${testDomainSection}
   ${basicSection}
   ${networkSection}
   ${envScreenshotSection}

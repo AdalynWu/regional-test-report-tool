@@ -469,6 +469,10 @@ input[type="file"]::file-selector-button:active {
   flex: 1;
 }
 
+.select-value.is-placeholder {
+  color: #9ca3af;
+}
+
 .select-chevron {
   display: inline-flex;
   align-items: center;
