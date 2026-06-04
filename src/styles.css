@@ -52,15 +52,138 @@
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
   background: var(--bg);
 }
 
 .app {
-  max-width: 1100px;
+  max-width: 1320px;
   margin: 0 auto;
   padding: 24px 20px 64px;
+}
+
+/* Desktop shell: main content + sticky right-side nav */
+.app-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1100px) auto;
+  gap: 24px;
+  align-items: start;
+  justify-content: center;
+}
+
+.section-anchor {
+  scroll-margin-top: 24px;
+}
+
+/* Right-side quick navigation */
+.side-nav {
+  position: sticky;
+  top: 24px;
+  align-self: start;
+  width: 180px;
+  padding: 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+.side-nav.collapsed {
+  width: auto;
+  padding: 10px;
+}
+
+.side-nav-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.side-nav.collapsed .side-nav-head {
+  justify-content: center;
+}
+
+.side-nav-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.side-nav-toggle {
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.side-nav-toggle:hover {
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary);
+  color: var(--color-primary-dark);
+}
+
+.side-nav-toggle:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.side-nav-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.side-nav a {
+  display: block;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  font-size: 13px;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.side-nav a:hover,
+.side-nav a:focus-visible {
+  outline: none;
+  background: var(--color-primary-soft);
+  color: var(--color-primary-dark);
+}
+
+@media (max-width: 1180px) {
+  .app-shell {
+    display: block;
+  }
+
+  .side-nav {
+    display: none;
+  }
 }
 
 .app-header {
@@ -389,6 +512,28 @@ input[type="file"]::file-selector-button:active {
 .checklist-item input {
   margin: 0;
   flex-shrink: 0;
+}
+
+/* Standalone group heading (e.g. 测试案例 above the category cards) */
+.group-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.group-heading::before {
+  content: "";
+  width: 4px;
+  align-self: stretch;
+  min-height: 20px;
+  background: var(--color-primary);
+  border-radius: 999px;
 }
 
 /* Case groups */
@@ -907,7 +1052,7 @@ input[type="file"]::file-selector-button:active {
   margin: 14px 0 0;
   padding: 10px 12px;
   font-size: 14px;
-  color: var(--color-primary-dark);
+  color: #2c2c2c;
   background: var(--color-primary-soft);
   border-radius: var(--radius-field);
   font-weight: 600;

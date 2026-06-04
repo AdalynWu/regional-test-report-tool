@@ -40,8 +40,9 @@ export function TestCaseList({
 
   return (
     <div className="case-groups">
-      {grouped.map(([category, cases]) => (
+      {grouped.map(([category, cases], index) => (
         <section key={category} className="card category-section">
+          {index === 0 && <h2 className="group-heading">测试案例</h2>}
           <h3 className="category-title">{category}</h3>
           <div className="case-list">
             {groupTestCasesByArticle(cases).map((article) => (

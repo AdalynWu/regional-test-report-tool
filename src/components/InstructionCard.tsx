@@ -6,7 +6,8 @@ import type { ReactNode } from "react";
  */
 const INSTRUCTIONS: ReactNode[] = [
   <>
-    請分別測試 android 以及 iOS 至少<span className="hl-danger">各一次</span>
+    請分別使用 android 以及 iOS 测试
+    <span className="hl-danger">各一次</span>
   </>,
   <>
     测试时，请使用第二只手机或是第三方录影工具，
@@ -21,9 +22,9 @@ const INSTRUCTIONS: ReactNode[] = [
     </span>
   </>,
   <>
-    请尽量前往「@dogtest003 | @qa_automation_test_3 | @swag | qacreator01|
-    @dogtest003」的页面进行所有的解锁行为。若以上帐号皆未有测试资源，则找
-    <span className="hl-danger">最便宜</span>的钻石数的資源进行解锁",
+    请尽量前往「@dogtest003 | @qa_automation_test_3 | @swag | qacreator01
+    」的页面进行所有的解锁行为。若以上帐号皆未有测试资源，则找
+    <span className="hl-danger">最便宜</span>的钻石数的資源进行解锁
   </>,
   <>
     测试完成后，.har 档案务必先下载完成，才能关闭Ramen App，

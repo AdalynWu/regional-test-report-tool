@@ -18,6 +18,7 @@ import { ReportActions } from "./components/ReportActions";
 import { InstructionCard } from "./components/InstructionCard";
 import { TestCaseMetaCard } from "./components/TestCaseMetaCard";
 import { TestVersionDownloadSection } from "./components/TestVersionDownloadSection";
+import { SideNav } from "./components/SideNav";
 import { APP_TITLE } from "./config/appConfig";
 
 function createEmptyBasicInfo(): BasicInfo {
@@ -98,33 +99,60 @@ function App() {
       )}
 
       {!loading && !error && testCases.length > 0 && (
-        <main className="app-main">
-          <InstructionCard />
-          {meta && <TestCaseMetaCard meta={meta} />}
-          <BasicInfoForm value={basicInfo} onChange={setBasicInfo} />
-          <PreTestChecklist />
-          <TestVersionDownloadSection />
-          <TestCaseList
-            testCases={testCases}
-            results={results}
-            onResultChange={handleResultChange}
-          />
-          <AttachmentForm value={attachmentInfo} onChange={setAttachmentInfo} />
-          <ReportPreview
-            basicInfo={basicInfo}
-            testCases={testCases}
-            results={results}
-            attachmentInfo={attachmentInfo}
-          />
-          <ReportActions
-            basicInfo={basicInfo}
-            results={results}
-            attachmentInfo={attachmentInfo}
-            testCases={testCases}
-            testCaseMeta={meta ?? undefined}
-            onLoadDraft={handleLoadDraft}
-          />
-        </main>
+        <div className="app-shell">
+          <main className="app-main">
+            <section id="instructions" className="section-anchor">
+              <InstructionCard />
+            </section>
+            {meta && (
+              <section id="test-case-meta" className="section-anchor">
+                <TestCaseMetaCard meta={meta} />
+              </section>
+            )}
+            <section id="basic-info" className="section-anchor">
+              <BasicInfoForm value={basicInfo} onChange={setBasicInfo} />
+            </section>
+            <section id="pre-test-checklist" className="section-anchor">
+              <PreTestChecklist />
+            </section>
+            <section id="version-download" className="section-anchor">
+              <TestVersionDownloadSection />
+            </section>
+            <section id="test-cases" className="section-anchor">
+              <TestCaseList
+                testCases={testCases}
+                results={results}
+                onResultChange={handleResultChange}
+              />
+            </section>
+            <section id="attachment" className="section-anchor">
+              <AttachmentForm
+                value={attachmentInfo}
+                onChange={setAttachmentInfo}
+              />
+            </section>
+            <section id="report-preview" className="section-anchor">
+              <ReportPreview
+                basicInfo={basicInfo}
+                testCases={testCases}
+                results={results}
+                attachmentInfo={attachmentInfo}
+              />
+            </section>
+            <section id="report-actions" className="section-anchor">
+              <ReportActions
+                basicInfo={basicInfo}
+                results={results}
+                attachmentInfo={attachmentInfo}
+                testCases={testCases}
+                testCaseMeta={meta ?? undefined}
+                onLoadDraft={handleLoadDraft}
+              />
+            </section>
+          </main>
+
+          <SideNav />
+        </div>
       )}
     </div>
   );
