@@ -1,8 +1,9 @@
 import dayjs from "dayjs";
 import type { TestCase, TestCaseMeta } from "../../types/report";
-import { parseTestCasesCsv } from "./parseTestCasesCsv";
-
-const SOURCE_NAME = "ramen-test-cases.csv";
+import {
+  parseTestCasesCsv,
+  type ParseTestCasesCsvOptions,
+} from "./parseTestCasesCsv";
 
 export interface FetchTestCasesResult {
   testCases: TestCase[];
@@ -10,12 +11,15 @@ export interface FetchTestCasesResult {
 }
 
 /**
- * Fetch and parse the test cases CSV.
+ * Fetch and parse a project's test-cases CSV.
  * Path is resolved against import.meta.env.BASE_URL so it works on both
  * local dev (/) and a GitHub Pages subpath.
  */
-export async function fetchTestCases(): Promise<FetchTestCasesResult> {
-  const url = `${import.meta.env.BASE_URL}data/${SOURCE_NAME}`;
+export async function fetchTestCases(
+  csvPath: string,
+  options?: ParseTestCasesCsvOptions,
+): Promise<FetchTestCasesResult> {
+  const url = `${import.meta.env.BASE_URL}${csvPath}`;
 
   let res: Response;
   try {
@@ -31,14 +35,14 @@ export async function fetchTestCases(): Promise<FetchTestCasesResult> {
 
   let testCases: TestCase[];
   try {
-    testCases = parseTestCasesCsv(text);
+    testCases = parseTestCasesCsv(text, options);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "CSV 解析失败";
     throw new Error(`${message}（路径：${url}）`, { cause: err });
   }
 
   const meta: TestCaseMeta = {
-    sourceName: SOURCE_NAME,
+    sourceName: csvPath,
     loadedAt: dayjs().format("YYYY-MM-DD HH:mm"),
     totalCases: testCases.length,
   };

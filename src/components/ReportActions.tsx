@@ -17,8 +17,7 @@ import {
 import { generateReportHtml } from "../features/report/generateReportHtml";
 import { downloadHtml } from "../features/report/downloadHtml";
 import { computeReportStats } from "../features/report/reportStats";
-import { APP_TITLE } from "../config/appConfig";
-import { TEST_VERSION_LINKS } from "../config/testVersionLinks";
+import type { ProjectConfig } from "../config/projects";
 
 interface ReportActionsProps {
   basicInfo: BasicInfo;
@@ -26,6 +25,8 @@ interface ReportActionsProps {
   attachmentInfo: AttachmentInfo;
   testCases: TestCase[];
   testCaseMeta?: TestCaseMeta;
+  project: ProjectConfig;
+  draftScope?: string;
   onLoadDraft: (draft: TestReportDraft) => void;
 }
 
@@ -53,17 +54,19 @@ export function ReportActions({
   attachmentInfo,
   testCases,
   testCaseMeta,
+  project,
+  draftScope,
   onLoadDraft,
 }: ReportActionsProps) {
   const [status, setStatus] = useState("");
 
   const handleSave = () => {
-    saveDraft({ basicInfo, results, attachmentInfo });
+    saveDraft(project.id, { basicInfo, results, attachmentInfo }, draftScope);
     setStatus("草稿已保存");
   };
 
   const handleLoad = () => {
-    const draft = loadDraft();
+    const draft = loadDraft(project.id, draftScope);
     if (!draft) {
       setStatus("没有草稿");
       return;
@@ -74,27 +77,19 @@ export function ReportActions({
 
   const handleClear = () => {
     if (!window.confirm("确定要清除草稿吗？此操作无法复原。")) return;
-    clearDraft();
+    clearDraft(project.id, draftScope);
     setStatus("草稿已清除");
   };
 
   const handleDownload = () => {
-    // All basic-info fields (incl. the three screenshots) are required;
-    // block the download until every one is filled.
+    // Required basic-info / screenshot fields come from the project config;
+    // block the download until every required one is filled.
     const requiredFields: { key: keyof BasicInfo; label: string }[] = [
-      { key: "testerName", label: "测试人员" },
-      { key: "testDate", label: "测试日期" },
-      { key: "testAccount", label: "测试帐号/密码" },
-      { key: "deviceModel", label: "设备型号" },
-      { key: "osVersion", label: "系统版本" },
-      { key: "location", label: "测试地区" },
-      { key: "appVersion", label: "App 版本" },
-      { key: "isp", label: "电信业者 / ISP" },
-      { key: "networkType", label: "网络类型" },
-      { key: "networkScreenshot", label: "网速测试截图" },
-      { key: "dnsScreenshot", label: "DNS 设置截图" },
-      { key: "processIdScreenshot", label: "Process ID 截图" },
-    ];
+      ...project.basicInfoFields,
+      ...(project.environmentScreenshotFields ?? []),
+    ]
+      .filter((f) => f.required)
+      .map((f) => ({ key: f.key, label: f.label }));
     const missing = requiredFields.filter(
       ({ key }) => !(basicInfo[key] ?? "").trim(),
     );
@@ -118,20 +113,21 @@ export function ReportActions({
     }
 
     const report: TestReport = {
-      title: APP_TITLE,
+      title: project.title,
       basicInfo,
       testCases,
       results,
       attachmentInfo,
       generatedAt: dayjs().format("YYYY-MM-DD HH:mm"),
       testCaseMeta,
-      testVersionLinks: TEST_VERSION_LINKS,
+      testVersionLinks: project.testVersionLinks,
+      showVersionDownloadSection: project.showVersionDownloadSection,
     };
     const html = generateReportHtml(report);
     const location = basicInfo.location.trim() || "未填写地区";
     const testDate = formatDateForFilename(basicInfo.testDate);
     const filename = `${sanitizeFilename(
-      `${APP_TITLE}_${location}_${testDate}`,
+      `${project.title}_${location}_${testDate}`,
     )}.html`;
     downloadHtml(html, filename);
     setStatus("报告已下载");

@@ -1,22 +1,14 @@
 import { useState } from "react";
 
-const CHECKLIST_ITEMS = [
-  "已移除前一版 App 并重新安装",
-  "已关闭 VPN",
-  "设备电量高于 25%",
-  "未开启省电模式",
-  "已完成网速测试并截图",
-  "已截图 DNS 设置",
-  "已截图 Process ID",
-  "已开始全程录影",
-  "已确认 .har 档案可以下载",
-];
+interface PreTestChecklistProps {
+  items: string[];
+}
 
 /**
- * Pre-test checklist. State is local-only by design (Phase 1) — it is not
- * lifted into the report draft.
+ * Pre-test checklist. State is local-only by design — it is not lifted into the
+ * report draft. Items come from the current project config.
  */
-export function PreTestChecklist() {
+export function PreTestChecklist({ items }: PreTestChecklistProps) {
   const [checked, setChecked] = useState<Record<string, boolean>>({});
 
   const toggle = (item: string) => {
@@ -27,7 +19,7 @@ export function PreTestChecklist() {
     <section className="card">
       <h2 className="section-title">测试前检查清单</h2>
       <ul className="checklist">
-        {CHECKLIST_ITEMS.map((item) => (
+        {items.map((item) => (
           <li key={item}>
             <label className="checklist-item">
               <input

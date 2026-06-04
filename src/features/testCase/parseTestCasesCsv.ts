@@ -1,5 +1,30 @@
 import Papa from "papaparse";
-import type { TestCase } from "../../types/report";
+import type { PaymentMethod, TestCase } from "../../types/report";
+
+export interface ParseTestCasesCsvOptions {
+  /**
+   * "category" (default): column 0 is the category.
+   * "paymentMethod": column 0 is the payment method (payment project) —
+   * category is fixed to "金流" and the value becomes testCase.paymentMethod.
+   */
+  categoryMode?: "category" | "paymentMethod";
+}
+
+/**
+ * Normalize a payment-method cell by *containment* so values like
+ * 「支付宝测试」/「微信测试」map correctly. Unknown/empty → "all" (never hides).
+ */
+function normalizePaymentMethod(raw: string): PaymentMethod | "all" {
+  const v = raw.trim();
+  const lower = v.toLowerCase();
+  if (v.includes("支付宝") || v.includes("支付寶") || lower.includes("alipay")) {
+    return "alipay";
+  }
+  if (v.includes("微信") || lower.includes("wechat")) {
+    return "wechat";
+  }
+  return "all";
+}
 
 /** Header label for the test-case header row (column 0). */
 const HEADER_CATEGORY = "类别";
@@ -54,7 +79,12 @@ function headerIndex(header: string[], label: string, fallback: number): number 
  * We locate the header row (row[0] === "类别"), then read the rows after it,
  * carrying forward blank 类别 / 项目 values from the previous non-blank row.
  */
-export function parseTestCasesCsv(csvText: string): TestCase[] {
+export function parseTestCasesCsv(
+  csvText: string,
+  options?: ParseTestCasesCsvOptions,
+): TestCase[] {
+  const categoryMode = options?.categoryMode ?? "category";
+  const isPaymentMode = categoryMode === "paymentMethod";
   const parsed = Papa.parse<string[]>(csvText, {
     header: false,
     skipEmptyLines: false,
@@ -85,6 +115,8 @@ export function parseTestCasesCsv(csvText: string): TestCase[] {
     const row = rows[i];
     if (!Array.isArray(row) || isBlankRow(row)) continue;
     if (containsSkipPhrase(row)) continue;
+    // Skip a repeated header row (the source may stack several tables).
+    if ((row[colCategory] ?? "").trim() === HEADER_CATEGORY) continue;
 
     // Raw cell values (before carry-forward).
     const cellCategory = cell(row, colCategory);
@@ -102,13 +134,18 @@ export function parseTestCasesCsv(csvText: string): TestCase[] {
     const sameItem = !cellItem || cellItem === lastItem;
     const isSameArticleContinuation = sameCategory && sameItem;
 
-    // Category / item carry-forward (unchanged logic), then display fallbacks.
+    // Column-0 / item carry-forward (unchanged logic). In paymentMethod mode the
+    // column-0 axis is the payment method; continuation is still column0 + item,
+    // so a 微信 row never inherits a 支付宝 requirement and vice versa.
     const resolvedCategory = cellCategory || lastCategory;
     const resolvedItem = cellItem || lastItem;
     lastCategory = resolvedCategory;
     lastItem = resolvedItem;
-    const category = resolvedCategory || "未分类";
+    const category = isPaymentMode ? "金流" : resolvedCategory || "未分类";
     const item = resolvedItem || "未命名项目";
+    const paymentMethod = isPaymentMode
+      ? normalizePaymentMethod(resolvedCategory)
+      : undefined;
 
     // Requirement carry-forward (merged cell OR repeated item text in source):
     // - own value → use it and remember it
@@ -134,6 +171,7 @@ export function parseTestCasesCsv(csvText: string): TestCase[] {
       stepsAndExpected,
       note: note || undefined,
       needScreenshot: needsScreenshot(requirement, stepsAndExpected, note),
+      paymentMethod,
     });
   }
 

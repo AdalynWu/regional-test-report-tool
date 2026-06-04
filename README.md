@@ -27,22 +27,72 @@ The Vite `base` does not affect `npm run dev` — local dev always serves from `
 
 ## CSV File Location
 
-Place the test-case CSV at:
+Each project has its own CSV (see "Multi-project support"):
 
 ```
-public/data/ramen-test-cases.csv
+public/data/ramen/test-cases.csv
+public/data/nav-site/test-cases.csv
+public/data/payment/test-cases.csv
 ```
 
-It is fetched at runtime from `${import.meta.env.BASE_URL}data/ramen-test-cases.csv`,
+A CSV is fetched at runtime from `${import.meta.env.BASE_URL}<project.csvPath>`,
 so it resolves correctly in both local dev (`/data/...`) and on GitHub Pages
-(`/regional-test-report-tool/data/...`). The file is **not** bundled — replace it
-any time without rebuilding the app (just refresh the page).
+(`/regional-test-report-tool/data/...`). The files are **not** bundled — replace
+them any time without rebuilding the app (just refresh the page).
+
+## Multi-project support
+
+This one repo serves multiple test projects, switched by a URL query (no router,
+no backend):
+
+```
+?project=ramen      → Ramen 測試報告
+?project=nav-site   → 導航網測試報告
+?project=payment    → 金流測試報告
+```
+
+An unknown or missing `?project` falls back to `ramen`.
+
+Each project is configured in **`src/config/projects.ts`** (`ProjectConfig`):
+`title`, `subtitle`, `csvPath`, `instructions`, `basicInfoFields`,
+`environmentScreenshotFields`, `preTestChecklistItems`,
+`showVersionDownloadSection`, `testVersionLinks`, `caseCategoryMode`,
+`filterByPaymentMethod`. So the instructions, basic-info fields, checklist, and
+version-download section differ per project. Drafts are stored **per project**
+(localStorage key `regional-test-report-draft:<projectId>`), so projects never
+overwrite each other.
+
+### Payment project (`?project=payment`)
+
+- The payment project does **not** add a separate paymentMethod column — it uses
+  the CSV **「类别」column as the payment method**. Allowed values (normalized):
+  `支付宝`/`alipay` → `alipay`, `微信`/`wechat` → `wechat`, `全部`/`all` → `all`
+  (anything else also → `all`, so a case is never accidentally hidden).
+- Every payment case's displayed category is fixed to **「金流」**; requirement
+  carry-forward uses **paymentMethod + item** as the continuation key, so a 微信
+  row never inherits a 支付宝 requirement (and vice versa).
+- The tester must pick a **付款方式** first; until then no test cases show (a hint
+  is displayed). After picking, only cases matching that method (plus `all` /
+  unmarked) are shown, and used for the preview + downloaded report.
+- Payment drafts are scoped by method too:
+  `regional-test-report-draft:payment:alipay` /
+  `regional-test-report-draft:payment:wechat` — the two never overwrite each other.
+
+### Adding a 4th project
+
+1. Add the new id to `ProjectId` in `src/config/projects.ts`.
+2. Add its `ProjectConfig` entry to `PROJECTS`.
+3. Add `public/data/<project-id>/test-cases.csv`.
+4. Give testers the `?project=<project-id>` URL.
+
+The GitHub Pages `base` in `vite.config.ts` must still match the repo name.
 
 ## CSV Format Requirements
 
 The CSV is exported from the source Google Sheet, so it is **not** a plain
-one-row-per-case file. Read this section before editing
-`public/data/ramen-test-cases.csv`.
+one-row-per-case file. Read this section before editing a project's
+`public/data/<project>/test-cases.csv`. (The **payment** project uses the「类别」
+column as the payment method — see "Multi-project support" above.)
 
 ### File basics
 
@@ -193,17 +243,16 @@ card (Requirement shown once, with a red line, plus Step 1 / Step 2) and the
 ## Test Version Links
 
 The "本次测试版本下载" section shows the Android APK / iOS download links for the
-build under test. These are maintained by QA in:
-
-```
-src/config/testVersionLinks.ts
-```
+build under test. They are maintained **per project** in
+`src/config/projects.ts` (`PROJECTS.<id>.testVersionLinks`), and the section is
+only shown when that project's `showVersionDownloadSection` is `true` (currently
+Ramen only):
 
 ```ts
-export const TEST_VERSION_LINKS: TestVersionLinks = {
+testVersionLinks: {
   apk: "", // Android APK download URL (http/https)
   ios: "", // iOS download URL (http/https)
-};
+},
 ```
 
 Notes:
@@ -247,7 +296,7 @@ base: "/qa-test-report-tool/";
 ```
 
 If `base` does not match the deployed path, assets (JS, CSS) and the
-`data/ramen-test-cases.csv` fetch will return 404 on GitHub Pages.
+`data/<project>/test-cases.csv` fetch will return 404 on GitHub Pages.
 
 ## Tester Workflow
 

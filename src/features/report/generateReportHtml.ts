@@ -369,7 +369,10 @@ export function generateReportHtml(report: TestReport): string {
     </section>`;
 
   const versionLinks = report.testVersionLinks;
-  const versionSection = `
+  const versionSection =
+    report.showVersionDownloadSection === false
+      ? ""
+      : `
     <section class="card">
       <h2 class="section-title">本次测试版本下载</h2>
       <div class="info-grid">
@@ -377,6 +380,23 @@ export function generateReportHtml(report: TestReport): string {
         ${infoRow("iOS", renderVersionLink(versionLinks?.ios))}
       </div>
     </section>`;
+
+  // Conditional rows for project-specific fields (empty for Ramen → omitted).
+  const paymentMethodLabel =
+    basicInfo.paymentMethod === "alipay"
+      ? "支付宝"
+      : basicInfo.paymentMethod === "wechat"
+        ? "微信"
+        : "";
+  const extraBasicRows = [
+    basicInfo.iosDeviceModel?.trim()
+      ? infoRow("iOS 设备型号", formatValue(basicInfo.iosDeviceModel))
+      : "",
+    basicInfo.androidDeviceModel?.trim()
+      ? infoRow("Android 设备型号", formatValue(basicInfo.androidDeviceModel))
+      : "",
+    paymentMethodLabel ? infoRow("付款方式", escapeHtml(paymentMethodLabel)) : "",
+  ].join("");
 
   const basicSection = `
     <section class="card">
@@ -389,10 +409,15 @@ export function generateReportHtml(report: TestReport): string {
         ${infoRow("系统版本", formatValue(basicInfo.osVersion))}
         ${infoRow("测试地区", formatValue(basicInfo.location))}
         ${infoRow("App 版本", formatValue(basicInfo.appVersion))}
+        ${extraBasicRows}
       </div>
     </section>`;
 
-  const networkSection = `
+  const hasNetworkInfo =
+    !!basicInfo.isp?.trim() || !!basicInfo.networkType?.trim();
+  const networkSection = !hasNetworkInfo
+    ? ""
+    : `
     <section class="card">
       <h2 class="section-title">网络信息</h2>
       <div class="info-grid">
@@ -401,7 +426,13 @@ export function generateReportHtml(report: TestReport): string {
       </div>
     </section>`;
 
-  const envScreenshotSection = `
+  const hasEnvScreenshots =
+    isImageDataUrl(basicInfo.networkScreenshot) ||
+    isImageDataUrl(basicInfo.dnsScreenshot) ||
+    isImageDataUrl(basicInfo.processIdScreenshot);
+  const envScreenshotSection = !hasEnvScreenshots
+    ? ""
+    : `
     <section class="card">
       <h2 class="section-title">环境截图</h2>
       <div class="screenshot-row">

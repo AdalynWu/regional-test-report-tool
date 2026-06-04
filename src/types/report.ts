@@ -5,6 +5,8 @@ export type TestStatus =
   | "not_tested"
   | "need_confirm";
 
+export type PaymentMethod = "alipay" | "wechat";
+
 export interface TestCase {
   id: string;
   category: string;
@@ -13,6 +15,8 @@ export interface TestCase {
   stepsAndExpected: string;
   note?: string;
   needScreenshot?: boolean;
+  /** Payment project only: which payment method this case applies to. */
+  paymentMethod?: PaymentMethod | "all";
 }
 
 export interface BasicInfo {
@@ -28,6 +32,11 @@ export interface BasicInfo {
   networkScreenshot?: string;
   dnsScreenshot?: string;
   processIdScreenshot?: string;
+  /** nav-site project */
+  iosDeviceModel?: string;
+  androidDeviceModel?: string;
+  /** payment project */
+  paymentMethod?: PaymentMethod;
 }
 
 export interface TestResult {
@@ -71,4 +80,6 @@ export interface TestReport {
   generatedAt: string;
   testCaseMeta?: TestCaseMeta;
   testVersionLinks?: TestVersionLinks;
+  /** When false, the report omits the version-download section. */
+  showVersionDownloadSection?: boolean;
 }
