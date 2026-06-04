@@ -130,6 +130,25 @@ and press Enter for each line:
 Line breaks are preserved (rendered with `white-space: pre-wrap`) in both the app
 and the downloaded report.
 
+To break an existing single-line cell, just wrap that one cell in quotes and add
+the line breaks — the other cells are unchanged. **Any trailing columns (e.g. the
+`Android 测试结果 01` / `iOS 等待时间 01` result columns) must come after the
+closing quote.** For example, turning one Steps cell into two lines:
+
+```
+Landing Page, Process ID,"{red}开始全程录影直至结束{/red}","打开App，截图本次测试 Process ID 后，
+直接点击 Frontend Domain Input 弹窗的 Confirm 按钮进入主画面",,-,,-,,-,
+```
+
+A half-quoted cell is the most common mistake: if you open `"` but forget the
+closing `"`, the parser keeps reading into later rows and the whole block breaks.
+
+### Simplified Chinese only
+
+Author content in **Simplified Chinese** (简体中文), not Traditional — keep it
+consistent with the rest of the sheet (e.g. 测试 not 測試, 关闭 not 關閉, 录影 not
+錄影, 档案 not 檔案).
+
 ### Highlighting words red
 
 Inside a test-case cell (项目 / 测试规范与要求 / 测试步骤与预期), wrap text in
