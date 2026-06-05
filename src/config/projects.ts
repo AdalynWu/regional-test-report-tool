@@ -55,7 +55,8 @@ const OS_VERSION_TOOLTIP = "打开 App 后，便会显示在画面底部";
 const SPEED_TOOLTIP =
   "请使用测速工具记录本次测试环境的下载与上传速度，并上传测速截图";
 const PROCESS_ID_TOOLTIP =
-  "打开 App 后，直接点击 Frontend Domain Input 弹窗的 Confirm 按钮后，便会显示在画面底部";
+  "打开 App 后，直接点击 Frontend Domain Input 弹窗的 Confirm 按钮后，便会显示在画面底部。\n" +
+  "iOS 不会显示 Process Id，截图中包含版本号即可 ";
 const PAYMENT_METHOD_TOOLTIP =
   "请依照当日指定的款方式选择对应的选项，以确保测试案例的正确过滤与分类";
 export const DEFAULT_PROJECT_ID: ProjectId = "ramen";

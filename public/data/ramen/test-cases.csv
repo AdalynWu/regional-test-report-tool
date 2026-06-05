@@ -44,7 +44,7 @@ VPN,,在测试开始前重启设备或开关飞行模式，确保无缓存的 VP
 类别,项目,测试规范与要求 (Requirement),测试步骤与预期 (Test Steps & Expection),Android 测试结果 01,Android 等待时间 01,iOS 测试结果 01,iOS 等待时间 01,Android 测试结果 02,Android 等待时间 02,NOTE
 测试前，请先确认「版本下载」、「基础资讯」、「环境检测皆已完成」,,,,,,,,,,
 Landing Page, Process ID,"{red}此步骤开始全程录影直至结束{/red}
-* {red}iOS{/red} 不会显示 ProcessID，可忽略上传截图的要求
+* {red}iOS{/red} 不会显示 ProcessID，截图中包含版本号即可
 * 将截图上传到上方「基本信息」处即可，无需重复上传
 ","1. 打开App，截图本次测试 Process ID，
 2. 无需输入 Domain，直接点击 Frontend Domain Input 弹窗的 Confirm 按钮进入主画面

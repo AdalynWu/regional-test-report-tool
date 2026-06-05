@@ -23,7 +23,8 @@ export async function fetchTestCases(
 
   let res: Response;
   try {
-    res = await fetch(url);
+    // no-store so editing the CSV is picked up on reload (no stale browser cache).
+    res = await fetch(url, { cache: "no-store" });
   } catch {
     throw new Error(`无法读取测试案例 CSV（路径：${url}）`);
   }

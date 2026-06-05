@@ -296,6 +296,7 @@ const STYLE = `
     display: inline-block; padding: 3px 12px; border-radius: 999px;
     font-size: 12px; font-weight: 700; border: 1px solid #cbd5e1; background: #fff;
   }
+  .status-summary { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
   .status-pass { color: #15803d; border-color: #86efac; background: #f0fdf4; }
   .status-fail { color: #b91c1c; border-color: #fca5a5; background: #fef2f2; }
   .status-blocked { color: #b45309; border-color: #fcd34d; background: #fffbeb; }
@@ -357,6 +358,20 @@ export function generateReportHtml(report: TestReport): string {
         ${infoRow("测试案例总数", String(meta.totalCases))}`
     : "";
 
+  const STATUS_ORDER: TestStatus[] = [
+    "pass",
+    "fail",
+    "blocked",
+    "need_confirm",
+    "not_tested",
+  ];
+  const statusChips = STATUS_ORDER.map(
+    (s) =>
+      `<span class="status-badge status-${s}">${escapeHtml(
+        STATUS_LABELS[s],
+      )}: ${stats.tally[s]}</span>`,
+  ).join("");
+
   const summarySection = `
     <section class="card">
       <h2 class="section-title">完成度摘要</h2>
@@ -366,6 +381,7 @@ export function generateReportHtml(report: TestReport): string {
         ${infoRow("未填写", String(stats.unfilled))}
         ${infoRow("完成率", `${stats.completionRate}%`)}
       </div>
+      <div class="status-summary">${statusChips}</div>
     </section>`;
 
   const versionLinks = report.testVersionLinks;
