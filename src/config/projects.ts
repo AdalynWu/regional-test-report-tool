@@ -59,6 +59,8 @@ const PROCESS_ID_TOOLTIP =
   "iOS 不会显示 Process Id，截图中包含版本号即可 ";
 const PAYMENT_METHOD_TOOLTIP =
   "请依照当日指定的款方式选择对应的选项，以确保测试案例的正确过滤与分类";
+const App_VERSION_TOOLTIP =
+  "打开 APP 后，版本信息会显示于画面画面正下方，例如：1.0.22-dev.1";
 export const DEFAULT_PROJECT_ID: ProjectId = "ramen";
 
 export const PROJECTS: Record<ProjectId, ProjectConfig> = {
@@ -121,6 +123,7 @@ export const PROJECTS: Record<ProjectId, ProjectConfig> = {
         label: "App 版本",
         required: true,
         placeholder: "例如：1.0.22-dev.1",
+        tooltip: App_VERSION_TOOLTIP,
       },
       {
         key: "isp",
@@ -311,7 +314,7 @@ export const PROJECTS: Record<ProjectId, ProjectConfig> = {
     preTestChecklistItems: [
       "已确认当日指定付款方式",
       "已确认指定测试装置",
-      "已确认登录测试帐号",
+      "已确认登录之帐号为测试帐号",
     ],
     testVersionLinks: { apk: "", ios: "" },
   },
