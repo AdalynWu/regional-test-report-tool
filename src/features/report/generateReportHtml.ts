@@ -1,4 +1,5 @@
 import type {
+  AttachmentInfo,
   BasicInfo,
   TestCase,
   TestReport,
@@ -460,6 +461,18 @@ function platformResultBlock(
     </div>`;
 }
 
+function platformAttachmentBlock(label: string, info: AttachmentInfo): string {
+  return `
+    <div class="platform-block">
+      <h3 class="platform-subtitle">${escapeHtml(label)}</h3>
+      <div class="info-grid">
+        ${infoRow("录影连结", renderLink(info.recordingUrl))}
+        ${infoRow("测试档案资料夹连结", renderLink(info.testFolderUrl))}
+        ${infoRow("其他备注", formatValue(info.extraNote))}
+      </div>
+    </div>`;
+}
+
 function buildDualCaseSection(
   testCases: TestCase[],
   platformsReport: NonNullable<TestReport["platformsReport"]>,
@@ -737,7 +750,7 @@ export function generateReportHtml(report: TestReport): string {
     caseSection = buildDualCaseSection(testCases, platformsReport);
   }
 
-  const attachmentSection = `
+  let attachmentSection = `
     <section class="card">
       <h2 class="section-title">附件信息</h2>
       <div class="info-grid">
@@ -746,6 +759,15 @@ export function generateReportHtml(report: TestReport): string {
         ${infoRow("其他备注", formatValue(attachmentInfo.extraNote))}
       </div>
     </section>`;
+  if (platformsReport && platformsReport.length > 0) {
+    attachmentSection = `
+    <section class="card">
+      <h2 class="section-title">附件信息</h2>
+      ${platformsReport
+        .map((pr) => platformAttachmentBlock(pr.label, pr.attachmentInfo))
+        .join("")}
+    </section>`;
+  }
 
   return `<!DOCTYPE html>
 <html lang="zh-CN">

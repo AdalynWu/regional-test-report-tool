@@ -1,8 +1,13 @@
 import { useState } from "react";
+import { SaveDraftButton } from "./SaveDraftButton";
 
 interface NavLink {
   label: string;
   href: string;
+}
+
+interface SideNavProps {
+  onSaveDraft: () => void;
 }
 
 const NAV_LINKS: NavLink[] = [
@@ -17,7 +22,7 @@ const NAV_LINKS: NavLink[] = [
 ];
 
 /** Sticky desktop quick-navigation. Plain anchor links — no router. Collapsible. */
-export function SideNav() {
+export function SideNav({ onSaveDraft }: SideNavProps) {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
@@ -39,13 +44,16 @@ export function SideNav() {
         </button>
       </div>
       {!collapsed && (
-        <ul className="side-nav-list">
-          {NAV_LINKS.map((link) => (
-            <li key={link.href}>
-              <a href={link.href}>{link.label}</a>
-            </li>
-          ))}
-        </ul>
+        <>
+          <ul className="side-nav-list">
+            {NAV_LINKS.map((link) => (
+              <li key={link.href}>
+                <a href={link.href}>{link.label}</a>
+              </li>
+            ))}
+          </ul>
+          <SaveDraftButton onSave={onSaveDraft} />
+        </>
       )}
     </nav>
   );

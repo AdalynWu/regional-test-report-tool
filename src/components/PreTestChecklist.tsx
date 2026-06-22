@@ -1,18 +1,20 @@
-import { useState } from "react";
-
 interface PreTestChecklistProps {
   items: string[];
+  checked: Record<string, boolean>;
+  onChange: (next: Record<string, boolean>) => void;
 }
 
 /**
- * Pre-test checklist. State is local-only by design — it is not lifted into the
- * report draft. Items come from the current project config.
+ * Pre-test checklist. Controlled by the parent so the state can be kept per
+ * platform (dual-platform projects). Not persisted to the draft.
  */
-export function PreTestChecklist({ items }: PreTestChecklistProps) {
-  const [checked, setChecked] = useState<Record<string, boolean>>({});
-
+export function PreTestChecklist({
+  items,
+  checked,
+  onChange,
+}: PreTestChecklistProps) {
   const toggle = (item: string) => {
-    setChecked((prev) => ({ ...prev, [item]: !prev[item] }));
+    onChange({ ...checked, [item]: !checked[item] });
   };
 
   return (

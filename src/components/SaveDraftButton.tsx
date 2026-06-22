@@ -20,7 +20,7 @@ export function SaveDraftButton({ onSave }: SaveDraftButtonProps) {
   return (
     <button
       type="button"
-      className="btn btn-primary save-draft-fab"
+      className="btn btn-primary side-nav-save"
       onClick={handleClick}
     >
       {saved ? "✓ 已保存" : "储存草稿"}

@@ -26,7 +26,6 @@ import { TestVersionDownloadSection } from "./components/TestVersionDownloadSect
 import { TestDomainSection } from "./components/TestDomainSection";
 import { SideNav } from "./components/SideNav";
 import { PlatformTabs } from "./components/PlatformTabs";
-import { SaveDraftButton } from "./components/SaveDraftButton";
 
 function createEmptyBasicInfo(): BasicInfo {
   return {
@@ -56,8 +55,10 @@ function App() {
   // Single-platform state (non-dual projects).
   const [basicInfo, setBasicInfo] = useState<BasicInfo>(createEmptyBasicInfo);
   const [results, setResults] = useState<Record<string, TestResult>>({});
+  const [attachmentInfo, setAttachmentInfo] = useState<AttachmentInfo>({});
+  const [checklist, setChecklist] = useState<Record<string, boolean>>({});
 
-  // Dual-platform state (e.g. ramen).
+  // Dual-platform state (e.g. ramen) — each platform is independent.
   const [activePlatform, setActivePlatform] = useState<Platform>("android");
   const [basicInfoByPlatform, setBasicInfoByPlatform] = useState<
     Record<Platform, BasicInfo>
@@ -65,8 +66,12 @@ function App() {
   const [resultsByPlatform, setResultsByPlatform] = useState<
     Record<Platform, Record<string, TestResult>>
   >(() => ({ android: {}, ios: {} }));
-
-  const [attachmentInfo, setAttachmentInfo] = useState<AttachmentInfo>({});
+  const [attachmentByPlatform, setAttachmentByPlatform] = useState<
+    Record<Platform, AttachmentInfo>
+  >(() => ({ android: {}, ios: {} }));
+  const [checklistByPlatform, setChecklistByPlatform] = useState<
+    Record<Platform, Record<string, boolean>>
+  >(() => ({ android: {}, ios: {} }));
 
   useEffect(() => {
     let cancelled = false;
@@ -95,6 +100,12 @@ function App() {
   // Active slices the shared UI binds to.
   const activeBasicInfo = isDual ? basicInfoByPlatform[activePlatform] : basicInfo;
   const activeResults = isDual ? resultsByPlatform[activePlatform] : results;
+  const activeAttachment = isDual
+    ? attachmentByPlatform[activePlatform]
+    : attachmentInfo;
+  const activeChecklist = isDual
+    ? checklistByPlatform[activePlatform]
+    : checklist;
 
   const handleResultChange = (caseId: string, result: TestResult) => {
     if (!isDual) {
@@ -105,6 +116,22 @@ function App() {
       ...prev,
       [activePlatform]: { ...prev[activePlatform], [caseId]: result },
     }));
+  };
+
+  const handleAttachmentChange = (next: AttachmentInfo) => {
+    if (!isDual) {
+      setAttachmentInfo(next);
+      return;
+    }
+    setAttachmentByPlatform((prev) => ({ ...prev, [activePlatform]: next }));
+  };
+
+  const handleChecklistChange = (next: Record<string, boolean>) => {
+    if (!isDual) {
+      setChecklist(next);
+      return;
+    }
+    setChecklistByPlatform((prev) => ({ ...prev, [activePlatform]: next }));
   };
 
   // Confirm before switching payment method (may hide already-filled results).
@@ -130,18 +157,19 @@ function App() {
       const prevActive = prev[activePlatform];
       const sharedKeys = project.sharedBasicInfoKeys ?? [];
       const other = otherPlatform(activePlatform);
-      const updatedOther = { ...prev[other] };
+      const sharedPatch: Record<string, unknown> = {};
       for (const key of sharedKeys) {
-        if (next[key] !== prevActive[key]) {
-          (updatedOther[key] as BasicInfo[typeof key]) = next[key];
-        }
+        if (next[key] !== prevActive[key]) sharedPatch[key] = next[key];
       }
-      return { ...prev, [activePlatform]: next, [other]: updatedOther };
+      return {
+        ...prev,
+        [activePlatform]: next,
+        [other]: { ...prev[other], ...sharedPatch },
+      };
     });
   };
 
   const handleLoadDraft = (draft: TestReportDraft) => {
-    setAttachmentInfo(draft.attachmentInfo ?? {});
     if (isDual) {
       if (draft.platforms) {
         setBasicInfoByPlatform({
@@ -151,6 +179,10 @@ function App() {
         setResultsByPlatform({
           android: draft.platforms.android?.results ?? {},
           ios: draft.platforms.ios?.results ?? {},
+        });
+        setAttachmentByPlatform({
+          android: draft.platforms.android?.attachmentInfo ?? {},
+          ios: draft.platforms.ios?.attachmentInfo ?? {},
         });
       } else {
         // Legacy single draft → load into the Android slice.
@@ -162,11 +194,16 @@ function App() {
           ...prev,
           android: draft.results ?? {},
         }));
+        setAttachmentByPlatform((prev) => ({
+          ...prev,
+          android: draft.attachmentInfo ?? {},
+        }));
       }
       return;
     }
     if (draft.basicInfo) setBasicInfo(draft.basicInfo);
     setResults(draft.results ?? {});
+    setAttachmentInfo(draft.attachmentInfo ?? {});
   };
 
   const needsPaymentMethod =
@@ -196,8 +233,13 @@ function App() {
     android: {
       basicInfo: basicInfoByPlatform.android,
       results: resultsByPlatform.android,
+      attachmentInfo: attachmentByPlatform.android,
     },
-    ios: { basicInfo: basicInfoByPlatform.ios, results: resultsByPlatform.ios },
+    ios: {
+      basicInfo: basicInfoByPlatform.ios,
+      results: resultsByPlatform.ios,
+      attachmentInfo: attachmentByPlatform.ios,
+    },
   };
 
   const buildDraft = (): TestReportDraft =>
@@ -205,7 +247,7 @@ function App() {
       ? {
           basicInfo: platforms.android.basicInfo,
           results: platforms.android.results,
-          attachmentInfo,
+          attachmentInfo: platforms.android.attachmentInfo,
           platforms,
         }
       : { basicInfo, results, attachmentInfo };
@@ -263,7 +305,11 @@ function App() {
               />
             </section>
             <section id="pre-test-checklist" className="section-anchor">
-              <PreTestChecklist items={project.preTestChecklistItems} />
+              <PreTestChecklist
+                items={project.preTestChecklistItems}
+                checked={activeChecklist}
+                onChange={handleChecklistChange}
+              />
             </section>
             {project.showVersionDownloadSection && (
               <section id="version-download" className="section-anchor">
@@ -294,8 +340,8 @@ function App() {
             </section>
             <section id="attachment" className="section-anchor">
               <AttachmentForm
-                value={attachmentInfo}
-                onChange={setAttachmentInfo}
+                value={activeAttachment}
+                onChange={handleAttachmentChange}
               />
             </section>
             <section id="report-preview" className="section-anchor">
@@ -306,14 +352,14 @@ function App() {
                     basicInfo={platforms.android.basicInfo}
                     testCases={visibleTestCases}
                     results={platforms.android.results}
-                    attachmentInfo={attachmentInfo}
+                    attachmentInfo={platforms.android.attachmentInfo}
                   />
                   <ReportPreview
                     label={platformLabel("ios")}
                     basicInfo={platforms.ios.basicInfo}
                     testCases={visibleTestCases}
                     results={platforms.ios.results}
-                    attachmentInfo={attachmentInfo}
+                    attachmentInfo={platforms.ios.attachmentInfo}
                   />
                 </>
               ) : (
@@ -329,7 +375,7 @@ function App() {
               <ReportActions
                 basicInfo={activeBasicInfo}
                 results={activeResults}
-                attachmentInfo={attachmentInfo}
+                attachmentInfo={activeAttachment}
                 testCases={visibleTestCases}
                 testCaseMeta={meta ?? undefined}
                 project={project}
@@ -343,8 +389,7 @@ function App() {
             </section>
           </main>
 
-          <SideNav />
-          <SaveDraftButton onSave={handleSaveDraft} />
+          <SideNav onSaveDraft={handleSaveDraft} />
         </div>
       )}
     </div>

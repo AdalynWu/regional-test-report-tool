@@ -12,6 +12,7 @@ export type Platform = "android" | "ios";
 export interface PlatformData {
   basicInfo: BasicInfo;
   results: Record<string, TestResult>;
+  attachmentInfo: AttachmentInfo;
 }
 
 export interface TestCase {
@@ -99,5 +100,6 @@ export interface TestReport {
     label: string;
     basicInfo: BasicInfo;
     results: Record<string, TestResult>;
+    attachmentInfo: AttachmentInfo;
   }>;
 }

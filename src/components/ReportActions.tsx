@@ -45,11 +45,11 @@ function sanitizeFilename(name: string): string {
     .trim();
 }
 
-/** Convert a test date to YYYYMMDD; fall back to today when empty. */
+/** Month-day (MMDD) from a test date; fall back to today when empty/invalid. */
 function formatDateForFilename(testDate: string): string {
   const trimmed = (testDate ?? "").trim();
-  if (!trimmed) return dayjs().format("YYYYMMDD");
-  return trimmed.replace(/-/g, "");
+  const parsed = trimmed ? dayjs(trimmed) : dayjs();
+  return (parsed.isValid() ? parsed : dayjs()).format("MMDD");
 }
 
 export function ReportActions({
@@ -180,6 +180,7 @@ export function ReportActions({
               label: platformLabel(p),
               basicInfo: platforms[p].basicInfo,
               results: platforms[p].results,
+              attachmentInfo: platforms[p].attachmentInfo,
             }))
           : undefined,
     };
@@ -187,11 +188,11 @@ export function ReportActions({
     const location =
       (dual && platforms ? platforms.android.basicInfo.location : basicInfo.location)
         .trim() || "未填写地区";
-    const testDate = formatDateForFilename(
+    const mmdd = formatDateForFilename(
       dual && platforms ? platforms.android.basicInfo.testDate : basicInfo.testDate,
     );
     const filename = `${sanitizeFilename(
-      `${project.title}_${location}_${testDate}`,
+      `${mmdd}_${project.id}_${location}`,
     )}.html`;
     downloadHtml(html, filename);
     setStatus("报告已下载");
