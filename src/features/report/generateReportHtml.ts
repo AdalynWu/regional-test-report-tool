@@ -593,6 +593,9 @@ export function generateReportHtml(report: TestReport): string {
     basicInfo.androidDeviceInfo?.trim()
       ? infoRow("Android 设备信息", formatValue(basicInfo.androidDeviceInfo))
       : "",
+    basicInfo.browserInfo?.trim()
+      ? infoRow("浏览器信息", formatValue(basicInfo.browserInfo))
+      : "",
     paymentMethodLabel ? infoRow("付款方式", escapeHtml(paymentMethodLabel)) : "",
   ].join("");
 

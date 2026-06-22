@@ -252,6 +252,12 @@ export const PROJECTS: Record<ProjectId, ProjectConfig> = {
         required: true,
         placeholder: "例如：Wi-Fi / 5G / 4G",
       },
+      {
+        key: "browserInfo",
+        label: "浏览器信息",
+        required: true,
+        placeholder: "例如：Safari / 小米瀏覽器",
+      },
     ],
     preTestChecklistItems: [
       "已确认测试时电量高于 25%",

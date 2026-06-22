@@ -45,6 +45,7 @@ export interface BasicInfo {
   androidDeviceInfo?: string;
   /** payment project */
   paymentMethod?: PaymentMethod;
+  browserInfo?: string;
 }
 
 export interface TestResult {
