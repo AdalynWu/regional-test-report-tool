@@ -1,8 +1,13 @@
-import type { BasicInfo, TestVersionLinks } from "../types/report";
+import type { BasicInfo, Platform, TestVersionLinks } from "../types/report";
 
 export type ProjectId = "ramen" | "nav-site" | "payment";
 
 export type CaseCategoryMode = "category" | "paymentMethod";
+
+/** Display label for a platform. */
+export function platformLabel(platform: Platform): string {
+  return platform === "android" ? "Android" : "iOS";
+}
 
 export interface BasicInfoFieldConfig {
   key: keyof BasicInfo;
@@ -19,6 +24,8 @@ export interface EnvironmentScreenshotFieldConfig {
   label: string;
   required?: boolean;
   tooltip?: string;
+  /** Only collected on the Android platform (dual-platform projects). */
+  androidOnly?: boolean;
 }
 
 export interface ProjectConfig {
@@ -36,6 +43,10 @@ export interface ProjectConfig {
   testDomainLinks?: { url: string };
   caseCategoryMode?: CaseCategoryMode;
   filterByPaymentMethod?: boolean;
+  /** When true, the tester fills Android + iOS via a platform tab in one report. */
+  dualPlatform?: boolean;
+  /** Basic-info keys shared across platforms (typed once, mirrored to both). */
+  sharedBasicInfoKeys?: (keyof BasicInfo)[];
 }
 
 /* ----- shared tooltip texts (mirrors current Ramen BasicInfoForm) ----- */
@@ -72,6 +83,8 @@ export const PROJECTS: Record<ProjectId, ProjectConfig> = {
     showVersionDownloadSection: true,
     caseCategoryMode: "category",
     filterByPaymentMethod: false,
+    dualPlatform: true,
+    sharedBasicInfoKeys: ["testerName", "testDate", "testAccount", "location"],
     instructions: [
       "請分別使用 android 以及 iOS 测试{red}各一次{/red}",
       "测试时，请使用第二只手机或是第三方录影工具，{red}不要使用裝置直接萤幕录影{/red}。录制测试过程的完整影片，画面需清晰且包含整支手机画面",
@@ -156,6 +169,7 @@ export const PROJECTS: Record<ProjectId, ProjectConfig> = {
         label: "Process ID 截图",
         required: true,
         tooltip: PROCESS_ID_TOOLTIP,
+        androidOnly: true,
       },
     ],
     preTestChecklistItems: [

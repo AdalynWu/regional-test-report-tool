@@ -1,4 +1,10 @@
-import type { TestReport, TestStatus } from "../../types/report";
+import type {
+  BasicInfo,
+  TestCase,
+  TestReport,
+  TestResult,
+  TestStatus,
+} from "../../types/report";
 import { computeReportStats } from "./reportStats";
 import { parseRichText } from "../../utils/richText";
 import { groupTestCasesByArticle } from "../testCase/groupTestCasesByArticle";
@@ -297,6 +303,12 @@ const STYLE = `
     font-size: 12px; font-weight: 700; border: 1px solid #cbd5e1; background: #fff;
   }
   .status-summary { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .platform-block { margin-top: 14px; padding-top: 12px; border-top: 1px dashed #e5e7eb; }
+  .platform-block:first-of-type { margin-top: 4px; }
+  .platform-subtitle { font-size: 14px; font-weight: 700; color: #1e40af; margin: 0 0 10px; }
+  .platform-results { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 4px; }
+  .platform-result { flex: 1 1 280px; min-width: 0; padding: 12px; background: #f8fafc; border: 1px solid #e5e7eb; border-left: 3px solid #dbeafe; border-radius: 8px; }
+  .platform-result-label { display: inline-block; font-size: 12px; font-weight: 700; color: #1e40af; background: #dbeafe; padding: 2px 10px; border-radius: 999px; margin-bottom: 8px; }
   .status-pass { color: #15803d; border-color: #86efac; background: #f0fdf4; }
   .status-fail { color: #b91c1c; border-color: #fca5a5; background: #fef2f2; }
   .status-blocked { color: #b45309; border-color: #fcd34d; background: #fffbeb; }
@@ -345,6 +357,160 @@ const LIGHTBOX_SCRIPT = `
 })();
 `;
 
+const STATUS_ORDER: TestStatus[] = [
+  "pass",
+  "fail",
+  "blocked",
+  "need_confirm",
+  "not_tested",
+];
+
+/* ---------- dual-platform (Android + iOS) section builders ---------- */
+
+function platformStatsBlock(
+  label: string,
+  testCases: TestCase[],
+  results: Record<string, TestResult>,
+): string {
+  const stats = computeReportStats(testCases, results);
+  const chips = STATUS_ORDER.map(
+    (s) =>
+      `<span class="status-badge status-${s}">${escapeHtml(
+        STATUS_LABELS[s],
+      )}: ${stats.tally[s]}</span>`,
+  ).join("");
+  return `
+    <div class="platform-block">
+      <h3 class="platform-subtitle">${escapeHtml(label)}</h3>
+      <div class="info-grid">
+        ${infoRow("已填写", String(stats.filled))}
+        ${infoRow("未填写", String(stats.unfilled))}
+        ${infoRow("完成率", `${stats.completionRate}%`)}
+      </div>
+      <div class="status-summary">${chips}</div>
+    </div>`;
+}
+
+function platformBasicBlock(label: string, info: BasicInfo): string {
+  return `
+    <div class="platform-block">
+      <h3 class="platform-subtitle">${escapeHtml(label)}</h3>
+      <div class="info-grid">
+        ${infoRow("设备型号", formatValue(info.deviceModel))}
+        ${infoRow("系统版本", formatValue(info.osVersion))}
+        ${infoRow("App 版本", formatValue(info.appVersion))}
+        ${infoRow("电信业者 / ISP", formatValue(info.isp))}
+        ${infoRow("网络类型", formatValue(info.networkType))}
+      </div>
+    </div>`;
+}
+
+function platformEnvBlock(
+  label: string,
+  info: BasicInfo,
+  includeProcessId: boolean,
+): string {
+  const processIdCell = includeProcessId
+    ? `<div class="info-row"><span class="case-block-label">Process ID 截图</span>${renderImage(
+        info.processIdScreenshot,
+        "Process ID 截图",
+      )}</div>`
+    : "";
+  return `
+    <div class="platform-block">
+      <h3 class="platform-subtitle">${escapeHtml(label)}</h3>
+      <div class="screenshot-row">
+        <div class="info-row"><span class="case-block-label">网速测试截图</span>${renderImage(
+          info.networkScreenshot,
+          "网速测试截图",
+        )}</div>
+        <div class="info-row"><span class="case-block-label">DNS 设置截图</span>${renderImage(
+          info.dnsScreenshot,
+          "DNS 设置截图",
+        )}</div>
+        ${processIdCell}
+      </div>
+    </div>`;
+}
+
+function platformResultBlock(
+  label: string,
+  result: TestResult | undefined,
+): string {
+  const status = result?.status ?? "not_tested";
+  return `
+    <div class="platform-result">
+      <span class="platform-result-label">${escapeHtml(label)}</span>
+      <div class="case-block"><span class="case-block-label">测试结果</span><span class="status-badge status-${status}">${escapeHtml(
+        formatStatus(status),
+      )}</span></div>
+      <div class="case-block"><span class="case-block-label">等待时间</span><p class="case-text">${formatValue(
+        result?.waitingTime,
+      )}</p></div>
+      <div class="case-block"><span class="case-block-label">实际结果</span><p class="case-text">${formatValue(
+        result?.actualResult,
+      )}</p></div>
+      <div class="case-block"><span class="case-block-label">备注</span><p class="case-text">${formatValue(
+        result?.note,
+      )}</p></div>
+      <div class="case-block"><span class="case-block-label">截图</span>${renderImageList(
+        result?.screenshots ?? [],
+        `${label} 截图`,
+      )}</div>
+    </div>`;
+}
+
+function buildDualCaseSection(
+  testCases: TestCase[],
+  platformsReport: NonNullable<TestReport["platformsReport"]>,
+): string {
+  const items = groupTestCasesByArticle(testCases)
+    .map((article) => {
+      const first = article.cases[0];
+      const last = article.cases[article.cases.length - 1];
+      const isMulti = article.cases.length > 1;
+      const idRange = isMulti ? `${first.id} ~ ${last.id}` : first.id;
+      const steps = article.cases
+        .map((testCase, index) => {
+          const stepTag = isMulti
+            ? `<span class="step-index">Step ${index + 1}</span>`
+            : "";
+          const resultBlocks = platformsReport
+            .map((pr) => platformResultBlock(pr.label, pr.results[testCase.id]))
+            .join("");
+          return `
+          <div class="report-step">
+            <div class="report-step-head">${stepTag}<span class="case-id">${escapeHtml(
+              testCase.id,
+            )}</span></div>
+            <div class="case-block"><span class="case-block-label">测试步骤与预期</span><p class="case-text">${renderRichText(
+              testCase.stepsAndExpected,
+            )}</p></div>
+            <div class="platform-results">${resultBlocks}</div>
+          </div>`;
+        })
+        .join("");
+      return `
+      <div class="report-article">
+        <div class="case-head">
+          <span class="case-id">${escapeHtml(idRange)}</span>
+          <span class="case-category">${renderRichText(article.category)}</span>
+          <h3 class="case-item">${renderRichText(article.item)}</h3>
+        </div>
+        <div class="case-block"><span class="case-block-label">测试规范与要求</span><p class="case-text">${renderRichText(
+          article.requirement,
+        )}</p></div>
+        <div class="report-step-list">${steps}</div>
+      </div>`;
+    })
+    .join("");
+  return `
+    <section class="card">
+      <h2 class="section-title">测试案例结果（共 ${testCases.length} 项）</h2>
+      ${items || `<p class="empty">${PLACEHOLDER}</p>`}
+    </section>`;
+}
+
 /** Build the complete, self-contained HTML report document as a string. */
 export function generateReportHtml(report: TestReport): string {
   const { basicInfo, attachmentInfo, testCases, results } = report;
@@ -358,13 +524,6 @@ export function generateReportHtml(report: TestReport): string {
         ${infoRow("测试案例总数", String(meta.totalCases))}`
     : "";
 
-  const STATUS_ORDER: TestStatus[] = [
-    "pass",
-    "fail",
-    "blocked",
-    "need_confirm",
-    "not_tested",
-  ];
   const statusChips = STATUS_ORDER.map(
     (s) =>
       `<span class="status-badge status-${s}">${escapeHtml(
@@ -372,7 +531,7 @@ export function generateReportHtml(report: TestReport): string {
       )}: ${stats.tally[s]}</span>`,
   ).join("");
 
-  const summarySection = `
+  let summarySection = `
     <section class="card">
       <h2 class="section-title">完成度摘要</h2>
       <div class="info-grid">
@@ -424,7 +583,7 @@ export function generateReportHtml(report: TestReport): string {
     paymentMethodLabel ? infoRow("付款方式", escapeHtml(paymentMethodLabel)) : "",
   ].join("");
 
-  const basicSection = `
+  let basicSection = `
     <section class="card">
       <h2 class="section-title">基本信息</h2>
       <div class="info-grid">
@@ -441,7 +600,7 @@ export function generateReportHtml(report: TestReport): string {
 
   const hasNetworkInfo =
     !!basicInfo.isp?.trim() || !!basicInfo.networkType?.trim();
-  const networkSection = !hasNetworkInfo
+  let networkSection = !hasNetworkInfo
     ? ""
     : `
     <section class="card">
@@ -456,7 +615,7 @@ export function generateReportHtml(report: TestReport): string {
     isImageDataUrl(basicInfo.networkScreenshot) ||
     isImageDataUrl(basicInfo.dnsScreenshot) ||
     isImageDataUrl(basicInfo.processIdScreenshot);
-  const envScreenshotSection = !hasEnvScreenshots
+  let envScreenshotSection = !hasEnvScreenshots
     ? ""
     : `
     <section class="card">
@@ -535,11 +694,48 @@ export function generateReportHtml(report: TestReport): string {
     })
     .join("");
 
-  const caseSection = `
+  let caseSection = `
     <section class="card">
       <h2 class="section-title">测试案例结果（共 ${testCases.length} 项）</h2>
       ${caseItems || `<p class="empty">${PLACEHOLDER}</p>`}
     </section>`;
+
+  // Dual-platform (e.g. ramen): override the platform-varying sections so one
+  // report shows both Android and iOS; shared header fields are shown once.
+  const platformsReport = report.platformsReport;
+  if (platformsReport && platformsReport.length > 0) {
+    const shared = platformsReport[0].basicInfo;
+    summarySection = `
+    <section class="card">
+      <h2 class="section-title">完成度摘要</h2>
+      ${metaRows ? `<div class="info-grid">${metaRows}</div>` : ""}
+      ${platformsReport
+        .map((pr) => platformStatsBlock(pr.label, testCases, pr.results))
+        .join("")}
+    </section>`;
+    basicSection = `
+    <section class="card">
+      <h2 class="section-title">基本信息</h2>
+      <div class="info-grid">
+        ${infoRow("测试人员", formatValue(shared.testerName))}
+        ${infoRow("测试日期", formatValue(shared.testDate))}
+        ${infoRow("测试帐号", formatValue(shared.testAccount))}
+        ${infoRow("测试地区", formatValue(shared.location))}
+      </div>
+      ${platformsReport
+        .map((pr) => platformBasicBlock(pr.label, pr.basicInfo))
+        .join("")}
+    </section>`;
+    networkSection = ""; // folded into each platform's basic block
+    envScreenshotSection = `
+    <section class="card">
+      <h2 class="section-title">环境截图</h2>
+      ${platformsReport
+        .map((pr) => platformEnvBlock(pr.label, pr.basicInfo, pr.id === "android"))
+        .join("")}
+    </section>`;
+    caseSection = buildDualCaseSection(testCases, platformsReport);
+  }
 
   const attachmentSection = `
     <section class="card">

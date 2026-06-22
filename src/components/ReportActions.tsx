@@ -3,21 +3,19 @@ import dayjs from "dayjs";
 import type {
   AttachmentInfo,
   BasicInfo,
+  Platform,
+  PlatformData,
   TestCase,
   TestCaseMeta,
   TestReport,
   TestReportDraft,
   TestResult,
 } from "../types/report";
-import {
-  clearDraft,
-  loadDraft,
-  saveDraft,
-} from "../features/report/reportStorage";
+import { clearDraft, loadDraft } from "../features/report/reportStorage";
 import { generateReportHtml } from "../features/report/generateReportHtml";
 import { downloadHtml } from "../features/report/downloadHtml";
 import { computeReportStats } from "../features/report/reportStats";
-import type { ProjectConfig } from "../config/projects";
+import { platformLabel, type ProjectConfig } from "../config/projects";
 
 interface ReportActionsProps {
   basicInfo: BasicInfo;
@@ -28,8 +26,13 @@ interface ReportActionsProps {
   project: ProjectConfig;
   draftScope?: string;
   testDomainUrl?: string;
+  dualPlatform?: boolean;
+  platforms?: Record<Platform, PlatformData>;
+  onSaveDraft: () => void;
   onLoadDraft: (draft: TestReportDraft) => void;
 }
+
+const PLATFORM_ORDER: Platform[] = ["android", "ios"];
 
 /**
  * Make a filename safe: remove illegal characters, collapse consecutive
@@ -58,12 +61,15 @@ export function ReportActions({
   project,
   draftScope,
   testDomainUrl,
+  dualPlatform,
+  platforms,
+  onSaveDraft,
   onLoadDraft,
 }: ReportActionsProps) {
   const [status, setStatus] = useState("");
 
   const handleSave = () => {
-    saveDraft(project.id, { basicInfo, results, attachmentInfo }, draftScope);
+    onSaveDraft();
     setStatus("草稿已保存");
   };
 
@@ -83,52 +89,107 @@ export function ReportActions({
     setStatus("草稿已清除");
   };
 
-  const handleDownload = () => {
-    // Required basic-info / screenshot fields come from the project config;
-    // block the download until every required one is filled.
-    const requiredFields: { key: keyof BasicInfo; label: string }[] = [
+  /** Required basic-info / screenshot fields missing for a given platform. */
+  const missingFieldsFor = (
+    platform: Platform | null,
+    info: BasicInfo,
+  ): string[] => {
+    const screenshotFields = (project.environmentScreenshotFields ?? []).filter(
+      // iOS does not collect Android-only screenshots (e.g. Process ID).
+      (f) => !(platform === "ios" && f.androidOnly),
+    );
+    const required: { key: keyof BasicInfo; label: string }[] = [
       ...project.basicInfoFields,
-      ...(project.environmentScreenshotFields ?? []),
+      ...screenshotFields,
     ]
       .filter((f) => f.required)
       .map((f) => ({ key: f.key, label: f.label }));
-    const missing = requiredFields.filter(
-      ({ key }) => !(basicInfo[key] ?? "").trim(),
-    );
-    if (missing.length > 0) {
-      setStatus(
-        `请先填写所有基本信息后再下载报告，尚未填写：${missing
-          .map((f) => f.label)
-          .join("、")}`,
-      );
-      return;
+    return required
+      .filter(({ key }) => !(info[key] ?? "").trim())
+      .map((f) => f.label);
+  };
+
+  const handleDownload = () => {
+    const dual = !!dualPlatform && !!platforms;
+
+    // Block until every required field is filled (per platform when dual).
+    if (dual && platforms) {
+      const parts = PLATFORM_ORDER.map((p) => {
+        const missing = missingFieldsFor(p, platforms[p].basicInfo);
+        return missing.length
+          ? `${platformLabel(p)}: ${missing.join("、")}`
+          : "";
+      }).filter(Boolean);
+      if (parts.length > 0) {
+        setStatus(`请先填写所有基本信息后再下载报告，尚未填写 → ${parts.join("；")}`);
+        return;
+      }
+    } else {
+      const missing = missingFieldsFor(null, basicInfo);
+      if (missing.length > 0) {
+        setStatus(
+          `请先填写所有基本信息后再下载报告，尚未填写：${missing.join("、")}`,
+        );
+        return;
+      }
     }
 
-    const stats = computeReportStats(testCases, results);
-    if (
-      stats.completionRate < 100 &&
-      !window.confirm(
-        `目前仍有 ${stats.unfilled} 个测试案例尚未填写，是否仍要下载报告？`,
-      )
-    ) {
-      return;
+    // Completion gating (per platform when dual).
+    if (dual && platforms) {
+      const incomplete = PLATFORM_ORDER.map((p) => {
+        const stats = computeReportStats(testCases, platforms[p].results);
+        return stats.completionRate < 100
+          ? `${platformLabel(p)} ${stats.unfilled} 个`
+          : "";
+      }).filter(Boolean);
+      if (
+        incomplete.length > 0 &&
+        !window.confirm(
+          `目前仍有测试案例尚未填写（${incomplete.join("、")}），是否仍要下载报告？`,
+        )
+      ) {
+        return;
+      }
+    } else {
+      const stats = computeReportStats(testCases, results);
+      if (
+        stats.completionRate < 100 &&
+        !window.confirm(
+          `目前仍有 ${stats.unfilled} 个测试案例尚未填写，是否仍要下载报告？`,
+        )
+      ) {
+        return;
+      }
     }
 
     const report: TestReport = {
       title: project.title,
-      basicInfo,
+      basicInfo: dual && platforms ? platforms.android.basicInfo : basicInfo,
       testCases,
-      results,
+      results: dual && platforms ? platforms.android.results : results,
       attachmentInfo,
       generatedAt: dayjs().format("YYYY-MM-DD HH:mm"),
       testCaseMeta,
       testVersionLinks: project.testVersionLinks,
       showVersionDownloadSection: project.showVersionDownloadSection,
       testDomainUrl,
+      platformsReport:
+        dual && platforms
+          ? PLATFORM_ORDER.map((p) => ({
+              id: p,
+              label: platformLabel(p),
+              basicInfo: platforms[p].basicInfo,
+              results: platforms[p].results,
+            }))
+          : undefined,
     };
     const html = generateReportHtml(report);
-    const location = basicInfo.location.trim() || "未填写地区";
-    const testDate = formatDateForFilename(basicInfo.testDate);
+    const location =
+      (dual && platforms ? platforms.android.basicInfo.location : basicInfo.location)
+        .trim() || "未填写地区";
+    const testDate = formatDateForFilename(
+      dual && platforms ? platforms.android.basicInfo.testDate : basicInfo.testDate,
+    );
     const filename = `${sanitizeFilename(
       `${project.title}_${location}_${testDate}`,
     )}.html`;

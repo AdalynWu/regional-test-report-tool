@@ -7,6 +7,13 @@ export type TestStatus =
 
 export type PaymentMethod = "alipay" | "wechat";
 
+export type Platform = "android" | "ios";
+
+export interface PlatformData {
+  basicInfo: BasicInfo;
+  results: Record<string, TestResult>;
+}
+
 export interface TestCase {
   id: string;
   category: string;
@@ -69,6 +76,8 @@ export interface TestReportDraft {
   basicInfo: BasicInfo;
   results: Record<string, TestResult>;
   attachmentInfo: AttachmentInfo;
+  /** Dual-platform projects (e.g. ramen) store both platforms here. */
+  platforms?: Record<Platform, PlatformData>;
 }
 
 export interface TestReport {
@@ -84,4 +93,11 @@ export interface TestReport {
   showVersionDownloadSection?: boolean;
   /** Test URL for projects that use one (e.g. nav-site). */
   testDomainUrl?: string;
+  /** When present, the report renders both platforms (e.g. ramen Android + iOS). */
+  platformsReport?: Array<{
+    id: Platform;
+    label: string;
+    basicInfo: BasicInfo;
+    results: Record<string, TestResult>;
+  }>;
 }

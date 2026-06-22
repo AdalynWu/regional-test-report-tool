@@ -12,6 +12,8 @@ interface ReportPreviewProps {
   testCases: TestCase[];
   results: Record<string, TestResult>;
   attachmentInfo: AttachmentInfo;
+  /** Optional platform label appended to the title (dual-platform projects). */
+  label?: string;
 }
 
 const STATUS_LABELS: Record<TestStatus, string> = {
@@ -40,6 +42,7 @@ export function ReportPreview({
   testCases,
   results,
   attachmentInfo,
+  label,
 }: ReportPreviewProps) {
   const stats = computeReportStats(testCases, results);
 
@@ -52,7 +55,7 @@ export function ReportPreview({
 
   return (
     <section className="card">
-      <h2 className="section-title">报告预览</h2>
+      <h2 className="section-title">报告预览{label ? ` · ${label}` : ""}</h2>
 
       <div className="preview-summary">
         <div className="info-row">

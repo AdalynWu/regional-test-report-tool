@@ -186,6 +186,66 @@ body {
   }
 }
 
+/* Platform tabs (dual-platform projects, e.g. ramen) */
+.platform-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.platform-tab {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: 1;
+  min-height: 40px;
+  padding: 10px 16px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-field);
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.platform-tab:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary-dark);
+}
+
+.platform-tab.is-active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.platform-tab:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.platform-tabs-hint {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+/* Always-visible fixed Save Draft button */
+.save-draft-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 90;
+  min-height: 44px;
+  padding: 12px 20px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.22);
+}
+
 .app-header {
   margin-bottom: 20px;
   padding: 22px 24px;
@@ -1402,5 +1462,11 @@ input[type="file"]::file-selector-button:active {
 
   .env-thumb-image img {
     width: 100%;
+  }
+
+  .save-draft-fab {
+    right: 12px;
+    bottom: 12px;
+    padding: 10px 16px;
   }
 }

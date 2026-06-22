@@ -3,6 +3,8 @@ import dayjs from "dayjs";
 import type {
   AttachmentInfo,
   BasicInfo,
+  Platform,
+  PlatformData,
   TestCase,
   TestCaseMeta,
   TestReportDraft,
@@ -10,6 +12,8 @@ import type {
 } from "./types/report";
 import { fetchTestCases } from "./features/testCase/testCase.service";
 import { getCurrentProject } from "./features/project/getCurrentProject";
+import { platformLabel } from "./config/projects";
+import { saveDraft } from "./features/report/reportStorage";
 import { BasicInfoForm } from "./components/BasicInfoForm";
 import { PreTestChecklist } from "./components/PreTestChecklist";
 import { TestCaseList } from "./components/TestCaseList";
@@ -21,6 +25,8 @@ import { TestCaseMetaCard } from "./components/TestCaseMetaCard";
 import { TestVersionDownloadSection } from "./components/TestVersionDownloadSection";
 import { TestDomainSection } from "./components/TestDomainSection";
 import { SideNav } from "./components/SideNav";
+import { PlatformTabs } from "./components/PlatformTabs";
+import { SaveDraftButton } from "./components/SaveDraftButton";
 
 function createEmptyBasicInfo(): BasicInfo {
   return {
@@ -37,6 +43,9 @@ function createEmptyBasicInfo(): BasicInfo {
 }
 
 const project = getCurrentProject();
+const isDual = !!project.dualPlatform;
+const otherPlatform = (p: Platform): Platform =>
+  p === "android" ? "ios" : "android";
 
 function App() {
   const [loading, setLoading] = useState(true);
@@ -44,8 +53,19 @@ function App() {
   const [testCases, setTestCases] = useState<TestCase[]>([]);
   const [meta, setMeta] = useState<TestCaseMeta | null>(null);
 
+  // Single-platform state (non-dual projects).
   const [basicInfo, setBasicInfo] = useState<BasicInfo>(createEmptyBasicInfo);
   const [results, setResults] = useState<Record<string, TestResult>>({});
+
+  // Dual-platform state (e.g. ramen).
+  const [activePlatform, setActivePlatform] = useState<Platform>("android");
+  const [basicInfoByPlatform, setBasicInfoByPlatform] = useState<
+    Record<Platform, BasicInfo>
+  >(() => ({ android: createEmptyBasicInfo(), ios: createEmptyBasicInfo() }));
+  const [resultsByPlatform, setResultsByPlatform] = useState<
+    Record<Platform, Record<string, TestResult>>
+  >(() => ({ android: {}, ios: {} }));
+
   const [attachmentInfo, setAttachmentInfo] = useState<AttachmentInfo>({});
 
   useEffect(() => {
@@ -72,14 +92,19 @@ function App() {
     };
   }, []);
 
-  const handleResultChange = (caseId: string, result: TestResult) => {
-    setResults((prev) => ({ ...prev, [caseId]: result }));
-  };
+  // Active slices the shared UI binds to.
+  const activeBasicInfo = isDual ? basicInfoByPlatform[activePlatform] : basicInfo;
+  const activeResults = isDual ? resultsByPlatform[activePlatform] : results;
 
-  const handleLoadDraft = (draft: TestReportDraft) => {
-    if (draft.basicInfo) setBasicInfo(draft.basicInfo);
-    setResults(draft.results ?? {});
-    setAttachmentInfo(draft.attachmentInfo ?? {});
+  const handleResultChange = (caseId: string, result: TestResult) => {
+    if (!isDual) {
+      setResults((prev) => ({ ...prev, [caseId]: result }));
+      return;
+    }
+    setResultsByPlatform((prev) => ({
+      ...prev,
+      [activePlatform]: { ...prev[activePlatform], [caseId]: result },
+    }));
   };
 
   // Confirm before switching payment method (may hide already-filled results).
@@ -94,25 +119,100 @@ function App() {
     ) {
       return;
     }
-    setBasicInfo(next);
+
+    if (!isDual) {
+      setBasicInfo(next);
+      return;
+    }
+
+    // Dual: write the active platform, and mirror shared keys to the other.
+    setBasicInfoByPlatform((prev) => {
+      const prevActive = prev[activePlatform];
+      const sharedKeys = project.sharedBasicInfoKeys ?? [];
+      const other = otherPlatform(activePlatform);
+      const updatedOther = { ...prev[other] };
+      for (const key of sharedKeys) {
+        if (next[key] !== prevActive[key]) {
+          (updatedOther[key] as BasicInfo[typeof key]) = next[key];
+        }
+      }
+      return { ...prev, [activePlatform]: next, [other]: updatedOther };
+    });
+  };
+
+  const handleLoadDraft = (draft: TestReportDraft) => {
+    setAttachmentInfo(draft.attachmentInfo ?? {});
+    if (isDual) {
+      if (draft.platforms) {
+        setBasicInfoByPlatform({
+          android: draft.platforms.android?.basicInfo ?? createEmptyBasicInfo(),
+          ios: draft.platforms.ios?.basicInfo ?? createEmptyBasicInfo(),
+        });
+        setResultsByPlatform({
+          android: draft.platforms.android?.results ?? {},
+          ios: draft.platforms.ios?.results ?? {},
+        });
+      } else {
+        // Legacy single draft → load into the Android slice.
+        setBasicInfoByPlatform((prev) => ({
+          ...prev,
+          android: draft.basicInfo ?? createEmptyBasicInfo(),
+        }));
+        setResultsByPlatform((prev) => ({
+          ...prev,
+          android: draft.results ?? {},
+        }));
+      }
+      return;
+    }
+    if (draft.basicInfo) setBasicInfo(draft.basicInfo);
+    setResults(draft.results ?? {});
   };
 
   const needsPaymentMethod =
-    !!project.filterByPaymentMethod && !basicInfo.paymentMethod;
+    !!project.filterByPaymentMethod && !activeBasicInfo.paymentMethod;
 
   const visibleTestCases =
-    project.filterByPaymentMethod && basicInfo.paymentMethod
+    project.filterByPaymentMethod && activeBasicInfo.paymentMethod
       ? testCases.filter(
           (tc) =>
-            tc.paymentMethod === basicInfo.paymentMethod ||
+            tc.paymentMethod === activeBasicInfo.paymentMethod ||
             tc.paymentMethod === "all" ||
             !tc.paymentMethod,
         )
       : testCases;
 
   const draftScope = project.filterByPaymentMethod
-    ? basicInfo.paymentMethod
+    ? activeBasicInfo.paymentMethod
     : undefined;
+
+  // iOS does not collect Android-only screenshots (e.g. Process ID).
+  const activeEnvScreenshotFields =
+    isDual && activePlatform === "ios"
+      ? (project.environmentScreenshotFields ?? []).filter((f) => !f.androidOnly)
+      : project.environmentScreenshotFields;
+
+  const platforms: Record<Platform, PlatformData> = {
+    android: {
+      basicInfo: basicInfoByPlatform.android,
+      results: resultsByPlatform.android,
+    },
+    ios: { basicInfo: basicInfoByPlatform.ios, results: resultsByPlatform.ios },
+  };
+
+  const buildDraft = (): TestReportDraft =>
+    isDual
+      ? {
+          basicInfo: platforms.android.basicInfo,
+          results: platforms.android.results,
+          attachmentInfo,
+          platforms,
+        }
+      : { basicInfo, results, attachmentInfo };
+
+  const handleSaveDraft = () => {
+    saveDraft(project.id, buildDraft(), draftScope);
+  };
 
   return (
     <div className="app">
@@ -146,11 +246,19 @@ function App() {
                 <TestCaseMetaCard meta={meta} />
               </section>
             )}
+            {isDual && (
+              <section id="platform" className="section-anchor">
+                <PlatformTabs
+                  active={activePlatform}
+                  onChange={setActivePlatform}
+                />
+              </section>
+            )}
             <section id="basic-info" className="section-anchor">
               <BasicInfoForm
-                value={basicInfo}
+                value={activeBasicInfo}
                 fields={project.basicInfoFields}
-                environmentScreenshotFields={project.environmentScreenshotFields}
+                environmentScreenshotFields={activeEnvScreenshotFields}
                 onChange={handleBasicInfoChange}
               />
             </section>
@@ -179,7 +287,7 @@ function App() {
               ) : (
                 <TestCaseList
                   testCases={visibleTestCases}
-                  results={results}
+                  results={activeResults}
                   onResultChange={handleResultChange}
                 />
               )}
@@ -191,29 +299,52 @@ function App() {
               />
             </section>
             <section id="report-preview" className="section-anchor">
-              <ReportPreview
-                basicInfo={basicInfo}
-                testCases={visibleTestCases}
-                results={results}
-                attachmentInfo={attachmentInfo}
-              />
+              {isDual ? (
+                <>
+                  <ReportPreview
+                    label={platformLabel("android")}
+                    basicInfo={platforms.android.basicInfo}
+                    testCases={visibleTestCases}
+                    results={platforms.android.results}
+                    attachmentInfo={attachmentInfo}
+                  />
+                  <ReportPreview
+                    label={platformLabel("ios")}
+                    basicInfo={platforms.ios.basicInfo}
+                    testCases={visibleTestCases}
+                    results={platforms.ios.results}
+                    attachmentInfo={attachmentInfo}
+                  />
+                </>
+              ) : (
+                <ReportPreview
+                  basicInfo={basicInfo}
+                  testCases={visibleTestCases}
+                  results={results}
+                  attachmentInfo={attachmentInfo}
+                />
+              )}
             </section>
             <section id="report-actions" className="section-anchor">
               <ReportActions
-                basicInfo={basicInfo}
-                results={results}
+                basicInfo={activeBasicInfo}
+                results={activeResults}
                 attachmentInfo={attachmentInfo}
                 testCases={visibleTestCases}
                 testCaseMeta={meta ?? undefined}
                 project={project}
                 draftScope={draftScope}
                 testDomainUrl={project.testDomainLinks?.url}
+                dualPlatform={isDual}
+                platforms={isDual ? platforms : undefined}
+                onSaveDraft={handleSaveDraft}
                 onLoadDraft={handleLoadDraft}
               />
             </section>
           </main>
 
           <SideNav />
+          <SaveDraftButton onSave={handleSaveDraft} />
         </div>
       )}
     </div>
